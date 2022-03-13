@@ -4,19 +4,21 @@ import numpy as np
 import scipy.misc
 import imageio
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 
 import torch
+
 torch.manual_seed(1)
 torch.cuda.manual_seed_all(1)
 
 
-#def salt_peper_noise(rng, input, corruption_dist):
+# def salt_peper_noise(rng, input, corruption_dist):
 #
 #    from torch.distributions import Distribution
-#    
+#
 #    #Bernoulli
 #    # salt and pepper noise
 #    print 'DAE uses salt and pepper noise'
@@ -28,9 +30,10 @@ torch.cuda.manual_seed_all(1)
 #    c = T.eq(a,0) * b
 #    return input * a + c
 
+
 def uploadG(critic_type, dataset):
 
-    if critic_type == 'LSGAN':
+    if critic_type == "LSGAN":
         from LSGAN import generator
     else:
         from GAN import generator
@@ -39,22 +42,26 @@ def uploadG(critic_type, dataset):
 
 def log_likelihood_samples_mean_sigma(samples, mean, logvar, dim):
 
-    constant = torch.log(torch.FloatTensor(np.asarray([np.pi]))*2)
-    return - constant[0] * samples.shape[dim] * 0.5  - \
-               torch.sum(((samples-mean)/torch.exp(logvar*0.5))**2 + logvar, dim=dim) * 0.5
+    constant = torch.log(torch.FloatTensor(np.asarray([np.pi])) * 2)
+    return (
+        -constant[0] * samples.shape[dim] * 0.5
+        - torch.sum(((samples - mean) / torch.exp(logvar * 0.5)) ** 2 + logvar, dim=dim)
+        * 0.5
+    )
+
 
 def prior_z(samples, dim):
 
-    constant = torch.log(torch.FloatTensor(np.asarray([np.pi]))*2)
-    return - constant[0]*samples.shape[dim] * 0.5 - torch.sum(samples**2, dim=dim) * 0.5
+    constant = torch.log(torch.FloatTensor(np.asarray([np.pi])) * 2)
+    return (
+        -constant[0] * samples.shape[dim] * 0.5 - torch.sum(samples ** 2, dim=dim) * 0.5
+    )
 
 
 def log_mean_exp(x, dim=1):
 
     m = torch.max(x, dim=dim, keepdim=True)[0]
     return m + torch.log(torch.mean(torch.exp(x - m), dim=dim, keepdim=True))
-
-
 
 
 def load_mnist(dataset):
@@ -67,16 +74,16 @@ def load_mnist(dataset):
             data = np.frombuffer(buf, dtype=np.uint8).astype(np.float)
         return data
 
-    data = extract_data(data_dir + '/train-images-idx3-ubyte.gz', 60000, 16, 28 * 28)
+    data = extract_data(data_dir + "/train-images-idx3-ubyte.gz", 60000, 16, 28 * 28)
     trX = data.reshape((60000, 28, 28, 1))
 
-    data = extract_data(data_dir + '/train-labels-idx1-ubyte.gz', 60000, 8, 1)
+    data = extract_data(data_dir + "/train-labels-idx1-ubyte.gz", 60000, 8, 1)
     trY = data.reshape((60000))
 
-    data = extract_data(data_dir + '/t10k-images-idx3-ubyte.gz', 10000, 16, 28 * 28)
+    data = extract_data(data_dir + "/t10k-images-idx3-ubyte.gz", 10000, 16, 28 * 28)
     teX = data.reshape((10000, 28, 28, 1))
 
-    data = extract_data(data_dir + '/t10k-labels-idx1-ubyte.gz', 10000, 8, 1)
+    data = extract_data(data_dir + "/t10k-labels-idx1-ubyte.gz", 10000, 8, 1)
     teY = data.reshape((10000))
 
     trY = np.asarray(trY).astype(np.int)
@@ -95,12 +102,13 @@ def load_mnist(dataset):
     for i, label in enumerate(y):
         y_vec[i, y[i]] = 1
 
-    X = X.transpose(0, 3, 1, 2) / 255.
+    X = X.transpose(0, 3, 1, 2) / 255.0
     # y_vec = y_vec.transpose(0, 3, 1, 2)
 
     X = torch.from_numpy(X).type(torch.FloatTensor)
     y_vec = torch.from_numpy(y_vec).type(torch.FloatTensor)
     return X, y_vec
+
 
 def load_celebA(dir, transform, batch_size, shuffle):
     # transform = transforms.Compose([
@@ -122,65 +130,75 @@ def print_network(net):
     for param in net.parameters():
         num_params += param.numel()
     print(net)
-    print('Total number of parameters: %d' % num_params)
+    print("Total number of parameters: %d" % num_params)
+
 
 def save_images(images, size, image_path):
     return imsave(images, size, image_path)
 
+
 def imsave(images, size, path):
     image = np.squeeze(merge(images, size))
+    print(image)
     image = image.astype(np.uint8)
     return imageio.imwrite(path, image)
 
+
 def merge(images, size):
     h, w = images.shape[1], images.shape[2]
-    if (images.shape[3] in (3,4)):
+    if images.shape[3] in (3, 4):
         c = images.shape[3]
         img = np.zeros((h * size[0], w * size[1], c))
         for idx, image in enumerate(images):
             i = idx % size[1]
             j = idx // size[1]
-            img[j * h:j * h + h, i * w:i * w + w, :] = image
+            img[j * h : j * h + h, i * w : i * w + w, :] = image
         return img
-    elif images.shape[3]==1:
+    elif images.shape[3] == 1:
         img = np.zeros((h * size[0], w * size[1]))
         for idx, image in enumerate(images):
             i = idx % size[1]
             j = idx // size[1]
-            img[j * h:j * h + h, i * w:i * w + w] = image[:,:,0]
+            img[j * h : j * h + h, i * w : i * w + w] = image[:, :, 0]
         return img
     else:
-        raise ValueError('in merge(images,size) images parameter ''must have dimensions: HxW or HxWx3 or HxWx4')
+        raise ValueError(
+            "in merge(images,size) images parameter "
+            "must have dimensions: HxW or HxWx3 or HxWx4"
+        )
+
 
 def generate_animation(path, num):
     images = []
     for e in range(num):
-        img_name = path + '_epoch%03d' % (e+1) + '.png'
+        img_name = path + "_epoch%03d" % (e + 1) + ".png"
         images.append(imageio.imread(img_name))
-    imageio.mimsave(path + '_generate_animation.gif', images, fps=5)
+    imageio.mimsave(path + "_generate_animation.gif", images, fps=5)
 
-def loss_plot(hist, path = 'Train_hist.png', model_name = ''):
-    x = range(len(hist['tr_loss']))
-    x2=range(len(hist['vl_loss']))
 
-    y1 = hist['tr_loss']
-    y2 = hist['vl_loss']
+def loss_plot(hist, path="Train_hist.png", model_name=""):
+    x = range(len(hist["tr_loss"]))
+    x2 = range(len(hist["vl_loss"]))
 
-    plt.plot(x, y1, label='train')
-    plt.plot(x2, y2, label='valid')
+    y1 = hist["tr_loss"]
+    y2 = hist["vl_loss"]
 
-    plt.xlabel('Iter')
-    plt.ylabel('Loss')
+    plt.plot(x, y1, label="train")
+    plt.plot(x2, y2, label="valid")
+
+    plt.xlabel("Iter")
+    plt.ylabel("Loss")
 
     plt.legend(loc=4)
     plt.grid(True)
     plt.tight_layout()
 
-    path = os.path.join(path, model_name + '_loss.png')
+    path = os.path.join(path, model_name + "_loss.png")
 
     plt.savefig(path)
 
     plt.close()
+
 
 def initialize_weights(net):
     for m in net.modules():
@@ -193,4 +211,3 @@ def initialize_weights(net):
         elif isinstance(m, nn.Linear):
             m.weight.data.normal_(0, 0.02)
             m.bias.data.zero_()
-
