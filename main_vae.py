@@ -51,7 +51,7 @@ def train(model, args, data_loader_tr, data_loader_vl):
 
                 recon_batch, mu, logvar, Z = model(x_)
                 loss = model.loss_function(recon_batch, x_, mu, logvar)
-                train_hist['tr_loss'].append(loss.data[0])
+                train_hist['tr_loss'].append(loss.data.item())
         
                 loss.backward()
                 optimizer.step()
@@ -80,7 +80,7 @@ def train(model, args, data_loader_tr, data_loader_vl):
                 recon_batch, mu, logvar, Z = model(x_, testF=1)
                 elbo = model.loss_function(recon_batch, x_, mu, logvar)
                 lle  = model.log_likelihood_estimate(recon_batch, x_, Z, mu, logvar)
-                train_hist['vl_loss'].append(lle.data[0])
+                train_hist['vl_loss'].append(lle.data.item())
 
 
                 if ((iter + 1) % 100) == 0:
@@ -89,8 +89,8 @@ def train(model, args, data_loader_tr, data_loader_vl):
                             (iter + 1), \
                             len(data_loader_vl.dataset) // args.batch_size, \
                             train_hist['tr_loss'][-1],\
-                            lle.data[0],\
-                            elbo.data[0]))
+                            lle.data.item(),\
+                            elbo.data.item()))
 
  
 
