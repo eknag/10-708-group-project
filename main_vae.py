@@ -64,7 +64,8 @@ def train(model, args, data_loader_tr, data_loader_vl):
                 #            loss.data[0]))
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
-        visualize_results(model, epoch+1, args)
+        if(epoch % args.visualize_every == 0):
+            visualize_results(model, epoch+1, args)
 
         model.eval()
         for iter, (x_, y_) in enumerate(data_loader_vl):
@@ -94,7 +95,7 @@ def train(model, args, data_loader_tr, data_loader_vl):
 
  
 
-        if epoch % 25 :
+        if (epoch % args.save_every) == 0:
             save(model, epoch, args.save_dir, args.dataset, \
                     args.model_type, args.batch_size, train_hist)
 
@@ -189,6 +190,8 @@ def parse_args():
     parser.add_argument('--beta1', type=float, default=0.9)
     parser.add_argument('--beta2', type=float, default=0.999)
     parser.add_argument('--gpu_mode', type=bool, default=True)
+    parser.add_argument('--visualize_every', type=int, default=50)
+    parser.add_argument('--save_every', type=int, default=50)
 
     return check_args(parser.parse_args())
 
