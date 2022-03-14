@@ -111,7 +111,7 @@ def train(model, args, data_loader_tr, data_loader_vl):
     save(model, epoch, args.save_dir, args.dataset, args.model_type, \
                                     args.batch_size, train_hist)
     utils.generate_animation(args.result_dir + '/' + args.dataset + '/' \
-                    + args.model_type + '/' + args.model_type, epoch)
+                    + args.model_type + '/' + args.model_type, epoch, args.save_every)
     utils.loss_plot(train_hist, os.path.join(args.save_dir, args.dataset, \
                                     args.model_type), args.model_type)
 
@@ -242,6 +242,7 @@ def main():
         model = DVAE(args)
     else:
         raise Exception("[!] There is no option for " + args.model_type)
+
 
 
     # load dataset

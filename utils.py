@@ -139,7 +139,7 @@ def save_images(images, size, image_path):
 
 def imsave(images, size, path):
     image = np.squeeze(merge(images, size))
-    return scipy.misc.imsave(path, image)
+    return imageio.imsave(path, image)
 
 
 def merge(images, size):
@@ -166,9 +166,9 @@ def merge(images, size):
         )
 
 
-def generate_animation(path, num):
+def generate_animation(path, num, step):
     images = []
-    for e in range(num):
+    for e in range(0,num,step):
         img_name = path + "_epoch%03d" % (e + 1) + ".png"
         images.append(imageio.imread(img_name))
     imageio.mimsave(path + "_generate_animation.gif", images, fps=5)
