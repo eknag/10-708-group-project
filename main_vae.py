@@ -64,38 +64,41 @@ def train(model, args, data_loader_tr, data_loader_vl):
                 #            loss.data[0]))
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
+        print(f"epoch took {train_hist['per_epoch_time'][-1]}")
         if(epoch % args.visualize_every == 0):
             visualize_results(model, epoch+1, args)
 
-        model.eval()
-        for iter, (x_, y_) in enumerate(data_loader_vl):
-            if iter * args.batch_size <= 10000:
-                if iter == data_loader_vl.dataset.__len__() // args.batch_size:
-                    break
-
-                if args.gpu_mode:
-                    x_ = Variable(x_.cuda())
-                else:
-                    x_ = Variable(x_)
-
-                recon_batch, mu, logvar, Z = model(x_, testF=1)
-                elbo = model.loss_function(recon_batch, x_, mu, logvar)
-                lle  = model.log_likelihood_estimate(recon_batch, x_, Z, mu, logvar)
-                train_hist['vl_loss'].append(lle.data.item())
-
-
-                if ((iter + 1) % 100) == 0:
-                    print("Epoch: [%2d] [%4d/%4d] Train loss: %.8f Valid  lle %.8f  Elbo (loss) %.8f" %
-                            ((epoch + 1), \
-                            (iter + 1), \
-                            len(data_loader_vl.dataset) // args.batch_size, \
-                            train_hist['tr_loss'][-1],\
-                            lle.data.item(),\
-                            elbo.data.item()))
-
- 
-
         if (epoch % args.save_every) == 0:
+            model.eval()
+
+            for iter, (x_, y_) in enumerate(data_loader_vl):
+                if iter * args.batch_size <= 10000:
+                    if iter == data_loader_vl.dataset.__len__() // args.batch_size:
+                        break
+
+                    if args.gpu_mode:
+                        x_ = Variable(x_.cuda())
+                    else:
+                        x_ = Variable(x_)
+
+                    recon_batch, mu, logvar, Z = model(x_, testF=1)
+                    elbo = model.loss_function(recon_batch, x_, mu, logvar)
+                    lle  = model.log_likelihood_estimate(recon_batch, x_, Z, mu, logvar)
+                    train_hist['vl_loss'].append(lle.data.item())
+
+
+                    if ((iter + 1) % 100) == 0:
+                        print("Epoch: [%2d] [%4d/%4d] Train loss: %.8f Valid  lle %.8f  Elbo (loss) %.8f" %
+                                ((epoch + 1), \
+                                (iter + 1), \
+                                len(data_loader_vl.dataset) // args.batch_size, \
+                                train_hist['tr_loss'][-1],\
+                                lle.data.item(),\
+                                elbo.data.item()))
+
+    
+
+        
             save(model, epoch, args.save_dir, args.dataset, \
                     args.model_type, args.batch_size, train_hist)
 
