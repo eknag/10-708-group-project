@@ -64,7 +64,7 @@ def train(model, args, data_loader_tr, data_loader_vl):
                 #            loss.data[0]))
 
         train_hist['per_epoch_time'].append(time.time() - epoch_start_time)
-        print(f"epoch took {train_hist['per_epoch_time'][-1]}")
+        print(f"epoch {epoch} took {train_hist['per_epoch_time'][-1]}")
         if(epoch % args.visualize_every == 0):
             visualize_results(model, epoch+1, args)
 
