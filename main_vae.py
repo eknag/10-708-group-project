@@ -195,6 +195,7 @@ def parse_args():
     parser.add_argument('--gpu_mode', type=bool, default=True)
     parser.add_argument('--visualize_every', type=int, default=50)
     parser.add_argument('--save_every', type=int, default=50)
+    parser.add_argument('--num_workers', type=int, default=4)
 
     return check_args(parser.parse_args())
 
@@ -248,22 +249,26 @@ def main():
         data_loader_tr = DataLoader(datasets.MNIST('data/mnist', train=True, download=True,
                                                             transform=transforms.Compose(
                                                                 [transforms.ToTensor()])),
-                                                batch_size=args.batch_size, shuffle=False)
+                                                batch_size=args.batch_size, shuffle=False,
+                                                num_workers=args.num_workers)
 
         data_loader_vl = DataLoader(datasets.MNIST('data/mnist', train=False, download=True,
                                                             transform=transforms.Compose(
                                                                 [transforms.ToTensor()])),
-                                                batch_size=args.batch_size, shuffle=False)
+                                                batch_size=args.batch_size, shuffle=False,
+                                                num_workers=args.num_workers)
     elif args.dataset == 'fmnist':
         data_loader_tr = DataLoader(datasets.FashionMNIST('data/fashion-mnist', train=True, download=True,
                                                             transform=transforms.Compose(
                                                                 [transforms.ToTensor()])),
-                                                batch_size=args.batch_size, shuffle=False)
+                                                batch_size=args.batch_size, shuffle=False,
+                                                num_workers=args.num_workers)
 
         data_loader_vl = DataLoader(datasets.FashionMNIST('data/fashion-mnist', train=False, download=True,
                                                             transform=transforms.Compose(
                                                                 [transforms.ToTensor()])),
-                                                batch_size=args.batch_size, shuffle=False)
+                                                batch_size=args.batch_size, shuffle=False,
+                                                num_workers=args.num_workers)
 
 
 
