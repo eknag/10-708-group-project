@@ -1,0 +1,3 @@
+[submodule "benchmark_VAE"]
+	path = benchmark_VAE
+	url = git@github.com:eknag/benchmark_VAE.git
