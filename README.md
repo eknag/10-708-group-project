@@ -13,6 +13,9 @@ git submodule update --remote
 https://git-scm.com/book/en/v2/Git-Tools-Submodules
 
 # Setup
-initially run `source setup.sh` to set up your environment and githooks
+`source setup.sh`
+`cd benchmark_VAE`
+`pip install -e .`
+
 
 
