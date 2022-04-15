@@ -68,7 +68,10 @@ def evaluate(
     MODEL = get_model(model_name)
     model_dir = os.path.join(model_dir, f"{dataset_name}_{model_name}")
     if not os.path.exists(model_dir):
-        raise FileNotFoundError(f"Model directory {model_dir} not found")
+        raise FileNotFoundError(
+            f"Model directory {model_dir} not found, make sure to train the model first."
+        )
+
     model_file = os.path.join(get_newest_file(model_dir), "final_model")
     model: VAE = MODEL.load_from_folder(model_file)
     model.eval()
@@ -116,12 +119,14 @@ def evaluate(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     print(f"batch size {batch_size}")
-    fid = calculate_fid_given_paths(
-        (eval_output_dir, sample_output_dir),
-        batch_size,
-        device,
-        dims=2048,
-        num_workers=num_workers,
+    fid = float(
+        calculate_fid_given_paths(
+            (eval_output_dir, sample_output_dir),
+            batch_size,
+            device,
+            dims=2048,
+            num_workers=num_workers,
+        )
     )
 
     results = {"FID": fid}
@@ -158,18 +163,10 @@ def main():
             dataset_performance[model_name] = results
         performances[dataset_name] = dataset_performance
 
-    # plot bar chart of fid for each dataset
-    axs, fig = plt.subplots(len(config.datasets), 1)
-    for i, dataset_name in enumerate(config.datasets):
-        dataset_performance = performances[dataset_name]
-        model_names = list(dataset_performance.keys())
-        model_names.sort()
-        model_fids = [
-            dataset_performance[model_name]["FID"] for model_name in model_names
-        ]
-        axs[i].bar(model_names, model_fids)
-        axs[i].set_title(dataset_name)
-    plt.savefig(os.path.join(output_dir, "fid_bar_chart.png"))
+    # save results
+    results_file = os.path.join(output_dir, "evaluation_results.yaml")
+    with open(results_file, "w") as f:
+        yaml.dump(performances, f, indent=4)
 
 
 if __name__ == "__main__":

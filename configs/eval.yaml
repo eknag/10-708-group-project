@@ -7,8 +7,6 @@ output_dir: "/home/everett/data/10-708-project-results/samples"
 dataset_dir: "/home/everett/data"
 datasets: 
   - "CIFAR10"
-  - "MNIST"
-  - "CelebA"
 sampler: "NormalSampler"
 metric: "FID"
 num_samples: 10000
