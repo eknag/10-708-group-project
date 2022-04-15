@@ -1,0 +1,11 @@
+model: "DVAE"  # one of VAE, BetaVAE, DVAE, CRVAE
+model_dir: "/home/everett/data/10-708-project-results/trained_models"
+output_dir: "/home/everett/data/10-708-project-results/eval_results"
+dataset_dir: "/home/everett/data"
+dataset_name: "CIFAR10"
+sampler: "NormalSampler"
+metric: "FID"
+num_samples: 10000
+batch_size: 100
+num_workers: 4
+
