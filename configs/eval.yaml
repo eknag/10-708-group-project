@@ -1,8 +1,14 @@
-model: "DVAE"  # one of VAE, BetaVAE, DVAE, CRVAE
+models: 
+  - "VAE"
+  - "BetaVAE"
+  - "DVAE"
 model_dir: "/home/everett/data/10-708-project-results/trained_models"
-output_dir: "/home/everett/data/10-708-project-results/eval_results"
+output_dir: "/home/everett/data/10-708-project-results/samples"
 dataset_dir: "/home/everett/data"
-dataset_name: "CIFAR10"
+datasets: 
+  - "CIFAR10"
+  - "MNIST"
+  - "CelebA"
 sampler: "NormalSampler"
 metric: "FID"
 num_samples: 10000
