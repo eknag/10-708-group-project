@@ -11,8 +11,9 @@ class CRVAEConfig(BaseAEConfig):
     Parameters:
         input_dim (int): The input_data dimension
         latent_dim (int): The latent space dimension. Default: None.
+        transform (str): The name of the transform function. Default: None. See AugmentationProcessor for list of names
         default_encoder (bool): Whether the encoder default. Default: True.
         default_decoder (bool): Whether the encoder default. Default: True.
-        """
+    """
 
     reconstruction_loss = "mse"
