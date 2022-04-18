@@ -20,25 +20,34 @@ def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarr
     train_percentage = 0.80
 
     if dataset_name == "CIFAR10":
-        dataset = datasets.CIFAR10(
-            root=config["data_dir"],
-            train=True,
-            download=True,
-        )
+        dataset = datasets.CIFAR10(root=config["data_dir"], train=True, download=True,)
         data = dataset.data
-        data = torch.tensor(data).to(device)
-        data = data.permute(0, 3, 1, 2)
         del dataset
+
+        data = torch.tensor(data).to(device)
+
+    else:
+        raise ValueError(f"The dataset {dataset_name} is not implemented.")
+
+    assert isinstance(data, torch.Tensor)
+
+    if len(data.shape) == 3:
+        data = data.unsqueeze(1)
+
+    if data.max() > 1.0:
+        data = data / 255.0
+
+    if data.shape[-1] in [1, 3]:
+        data = data.permute(0, 3, 1, 2)
 
     train_data = data[: int(train_percentage * len(data))]
     test_data = data[int(train_percentage * len(data)) :]
 
     assert len(data.shape) == 4, f"The shape of the data is {data.shape}"
     assert data.shape[1] == 3, f"The number of channels is {data.shape[1]}"
+    assert data.max() <= 1.0
+    assert data.min() >= 0.0
 
-    # # need to check data format
-    # assert data.max() <= 1.0
-    # assert data.min() >= 0.0
     return train_data, test_data
 
 
@@ -73,32 +82,24 @@ def get_model(
     """
 
     if model_name == "VAE":
-        model_config = models.VAEConfig(
-            input_dim=input_dim,
-            **config["model_config"],
-        )
+        model_config = models.VAEConfig(input_dim=input_dim, **config["model_config"],)
 
         model = models.VAE(model_config, encoder, decoder)
 
     elif model_name == "BetaVAE":
         model_config = models.BetaVAEConfig(
-            input_dim=input_dim,
-            **config["model_config"],
+            input_dim=input_dim, **config["model_config"],
         )
 
         model = models.BetaVAE(model_config, encoder, decoder)
 
     elif model_name == "DVAE":
-        model_config = models.DVAEConfig(
-            input_dim=input_dim,
-            **config["model_config"],
-        )
+        model_config = models.DVAEConfig(input_dim=input_dim, **config["model_config"],)
         model = models.DVAE(model_config, encoder, decoder)
 
     elif model_name == "CRVAE":
         model_config = models.CRVAEConfig(
-            input_dim=input_dim,
-            **config["model_config"],
+            input_dim=input_dim, **config["model_config"],
         )
 
         model = models.CRVAE(model_config, encoder, decoder)
@@ -113,13 +114,7 @@ def get_pipeline(trainer_name: str, model: models.VAE, config) -> trainers.BaseT
     else:
         raise ValueError(f"The trainer {trainer_name} is not implemented.")
 
-    print(f"The trainer is {trainer_name}")
-    print(f"the learning rate is {training_config.learning_rate}")
-
-    pipeline = pipelines.TrainingPipeline(
-        model=model,
-        training_config=training_config,
-    )
+    pipeline = pipelines.TrainingPipeline(model=model, training_config=training_config,)
 
     return pipeline
 
@@ -138,11 +133,7 @@ def main(config):
 
     # get the model
     model = get_model(
-        config["model_name"],
-        train_data.shape[1:],
-        encoder,
-        decoder,
-        config,
+        config["model_name"], train_data.shape[1:], encoder, decoder, config,
     )
 
     # get the pipeline
