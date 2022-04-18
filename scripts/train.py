@@ -136,7 +136,7 @@ def main(config):
     """
     Main function.
     """
-
+    # add dataset name and model name to the output folder
     config = correct_output_dir(config)
 
     # get the dataset
