@@ -127,9 +127,10 @@ def get_pipeline(trainer_name: str, model: models.VAE, config) -> trainers.BaseT
 
 
 def correct_output_dir(config):
-    output_folder = f"{config['dataset']}_{config['model_name']}"
+    output_folder = f"{config['dataset_name']}_{config['model_name']}"
     output_folder = os.path.join(config["training_config"]["output_dir"], output_folder)
     config["training_config"]["output_dir"] = output_folder
+    return config
 
 
 def main(config):
