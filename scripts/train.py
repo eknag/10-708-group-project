@@ -110,6 +110,12 @@ def get_pipeline(trainer_name: str, model: models.VAE, config) -> trainers.BaseT
     if trainer_name == "BaseTrainer":
         training_config = trainers.BaseTrainingConfig(**config["training_config"])
 
+    else:
+        raise ValueError(f"The trainer {trainer_name} is not implemented.")
+
+    print(f"The trainer is {trainer_name}")
+    print(f"the learning rate is {training_config.learning_rate}")
+
     pipeline = pipelines.TrainingPipeline(
         model=model,
         training_config=training_config,
@@ -143,7 +149,7 @@ def main(config):
     pipeline = get_pipeline(config["trainer_name"], model, config)
 
     # train the model
-    pipeline.train(train_data, test_data)
+    pipeline(train_data, test_data)
 
 
 if __name__ == "__main__":
