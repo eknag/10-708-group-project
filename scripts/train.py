@@ -20,22 +20,54 @@ def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarr
     train_percentage = 0.80
 
     if dataset_name == "CIFAR10":
-        dataset = datasets.CIFAR10(root=config.data_dir, split="train", download=True)
+        dataset = datasets.CIFAR10(
+            root=config["data_dir"],
+            train=True,
+            download=True,
+        )
         data = dataset.data
+        data = torch.tensor(data).to(device)
+        data = data.permute(0, 3, 1, 2)
         del dataset
 
     train_data = data[: int(train_percentage * len(data))]
     test_data = data[int(train_percentage * len(data)) :]
 
-    assert len(data.shape) == 4 and data.shape[1] == 3
+    assert len(data.shape) == 4, f"The shape of the data is {data.shape}"
+    assert data.shape[1] == 3, f"The number of channels is {data.shape[1]}"
 
-    # need to check data format
-    assert data.max() <= 1.0
-    assert data.min() >= 0.0
+    # # need to check data format
+    # assert data.max() <= 1.0
+    # assert data.min() >= 0.0
     return train_data, test_data
 
 
-def get_model(model_name: str, input_dim: Tuple[int], config) -> models.VAE:
+def get_encoder_decoder(dataset_name: str, input_dim: Tuple[int], config):
+    ae_config = models.base.base_config.BaseAEConfig(
+        input_dim=input_dim,
+        latent_dim=config["model_config"]["latent_dim"],
+        uses_default_encoder=False,
+        uses_default_decoder=False,
+    )
+
+    if "CIFAR" in dataset_name:
+        encoder = benchmarks.cifar.Encoder_VAE_CIFAR(ae_config)
+        decoder = benchmarks.cifar.Decoder_AE_CIFAR(ae_config)
+
+    elif "MNIST" in dataset_name:
+        encoder = benchmarks.mnist.Encoder_VAE_MNIST(ae_config)
+        decoder = benchmarks.mnist.Decoder_AE_MNIST(ae_config)
+
+    elif "CelebA" in dataset_name:
+        encoder = benchmarks.celeba.Encoder_VAE_CelebA(ae_config)
+        decoder = benchmarks.celeba.Decoder_AE_CelebA(ae_config)
+
+    return encoder, decoder
+
+
+def get_model(
+    model_name: str, input_dim: Tuple[int], encoder, decoder, config
+) -> models.VAE:
     """
     Get the model from the name.
     """
@@ -43,60 +75,40 @@ def get_model(model_name: str, input_dim: Tuple[int], config) -> models.VAE:
     if model_name == "VAE":
         model_config = models.VAEConfig(
             input_dim=input_dim,
-            latent_dim=config.model_config.latent_dim,
+            **config["model_config"],
         )
 
-        encoder = benchmarks.Encoder_VAE_GENERIC(model_config)
-        decoder = benchmarks.Decoder_AE_GENERIC(model_config)
-
-        model = models.VAE(encoder, decoder, model_config)
+        model = models.VAE(model_config, encoder, decoder)
 
     elif model_name == "BetaVAE":
         model_config = models.BetaVAEConfig(
             input_dim=input_dim,
-            latent_dim=config.model_config.latent_dim,
-            beta=config.model_config.beta,
+            **config["model_config"],
         )
 
-        encoder = benchmarks.Encoder_VAE_GENERIC(model_config)
-        decoder = benchmarks.Decoder_AE_GENERIC(model_config)
-
-        model = models.BetaVAE(encoder, decoder, model_config)
+        model = models.BetaVAE(model_config, encoder, decoder)
 
     elif model_name == "DVAE":
         model_config = models.DVAEConfig(
             input_dim=input_dim,
-            latent_dim=config.model_config.latent_dim,
-            sigma=config.model_config.sigma,
+            **config["model_config"],
         )
-
-        encoder = benchmarks.Encoder_VAE_GENERIC(model_config)
-        decoder = benchmarks.Decoder_AE_GENERIC(model_config)
-
-        model = models.DVAE(encoder, decoder, model_config)
+        model = models.DVAE(model_config, encoder, decoder)
 
     elif model_name == "CRVAE":
         model_config = models.CRVAEConfig(
             input_dim=input_dim,
-            # **config.model_config.__dict__,
-            latent_dim=config.model_config.latent_dim,
-            transform=config.model_config.transform,
-            gamma=config.model_config.gamma,  # default 1e-3
-            beta_1=config.model_config.beta_1,  # default 1
-            beta_2=config.model_config.beta_2,  # default 1
+            **config["model_config"],
         )
 
-        encoder = benchmarks.Encoder_VAE_GENERIC(model_config)
-        decoder = benchmarks.Decoder_AE_GENERIC(model_config)
-
-        model = models.CRVAE(encoder, decoder, model_config)
+        model = models.CRVAE(model_config, encoder, decoder)
 
     return model
 
 
 def get_pipeline(trainer_name: str, model: models.VAE, config) -> trainers.BaseTrainer:
     if trainer_name == "BaseTrainer":
-        training_config = trainers.BaseTrainingConfig(**config.training_config.__dict__)
+        training_config = trainers.BaseTrainingConfig(**config["training_config"])
 
     pipeline = pipelines.TrainingPipeline(
         model=model,
@@ -111,13 +123,24 @@ def main(config):
     Main function.
     """
     # get the dataset
-    train_data, test_data = get_dataset(config.dataset_name, config)
+    train_data, test_data = get_dataset(config["dataset_name"], config)
+
+    # get the encoder and decoder
+    (encoder, decoder) = get_encoder_decoder(
+        config["dataset_name"], train_data.shape[1:], config
+    )
 
     # get the model
-    model = get_model(config.model_name, train_data.shape[1:], config)
+    model = get_model(
+        config["model_name"],
+        train_data.shape[1:],
+        encoder,
+        decoder,
+        config,
+    )
 
     # get the pipeline
-    pipeline = get_pipeline(config.trainer_name, model, config)
+    pipeline = get_pipeline(config["trainer_name"], model, config)
 
     # train the model
     pipeline.train(train_data, test_data)
@@ -125,9 +148,11 @@ def main(config):
 
 if __name__ == "__main__":
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/train.yaml")
     args = parser.parse_args()
 
     config = yaml.safe_load(open(args.config, "r"))
+
     main(config)

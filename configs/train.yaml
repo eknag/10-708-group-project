@@ -1,15 +1,14 @@
-datasets:
-  - "CIFAR10"
-  - "CIFAR100" 
-  - "Flowers102"
+data_dir: "data/"
 
-model: "VAE" 
+dataset_name: "CIFAR10"
+
+model_name: "VAE" 
 
 model_config:
-  - latent_dim: 16
+  latent_dim: 16
 
+trainer_name: "BaseTrainer"
 training_config:
-  trainer_type : "BaseTrainer"
   output_dir: "./results"
   learning_rate: 0.001
   batch_size: 128
