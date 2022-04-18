@@ -108,4 +108,6 @@ ENV/
 
 # mypy
 .mypy_cache/
->>>>>>> 9b2dc543e160773e7ce73adff9f0538e43b3c0b0
+
+# vscode
+.vscode
