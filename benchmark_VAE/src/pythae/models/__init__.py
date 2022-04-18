@@ -19,8 +19,8 @@ from .ae import AE, AEConfig
 from .wae_mmd import WAE_MMD, WAE_MMD_Config
 from .vae import VAE, VAEConfig
 from .beta_vae import BetaVAE, BetaVAEConfig
-from .crvae import CRVAE, CRVAEConfig
 from .dvae import DVAE, DVAEConfig
+from .crvae import CRVAE, CRVAEConfig
 from .factor_vae import FactorVAE, FactorVAEConfig
 from .vamp import VAMP, VAMPConfig
 from .hvae import HVAE, HVAEConfig
@@ -49,10 +49,6 @@ __all__ = [
     "VAEConfig",
     "BetaVAE",
     "BetaVAEConfig",
-    "CRVAE",
-    "CRVAEConfig",
-    "DVAE",
-    "DVAEConfig",
     "VAMP",
     "VAMPConfig",
     "HVAE",
@@ -65,7 +61,7 @@ __all__ = [
     "RAE_GP_Config",
     "IWAE",
     "IWAEConfig",
-    "INFOVAE_MMD",
+    "INFOVAE_MMD", 
     "INFOVAE_MMD_Config",
     "VQVAE",
     "VQVAEConfig",
@@ -75,7 +71,7 @@ __all__ = [
     "VAEGANConfig",
     "MSSSIM_VAE",
     "MSSSIM_VAEConfig",
-    "SVAE",
+    "SVAE", 
     "SVAEConfig",
     "DisentangledBetaVAE",
     "DisentangledBetaVAEConfig",
