@@ -31,12 +31,15 @@ def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarr
 
     assert isinstance(data, torch.Tensor)
 
+    # Correct shape of single channel images
     if len(data.shape) == 3:
         data = data.unsqueeze(1)
 
+    # make sure all images are in the range [0, 1]
     if data.max() > 1.0:
         data = data / 255.0
 
+    # set the channel dimension to be dimension 1
     if data.shape[-1] in [1, 3]:
         data = data.permute(0, 3, 1, 2)
 
@@ -45,8 +48,8 @@ def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarr
 
     assert len(data.shape) == 4, f"The shape of the data is {data.shape}"
     assert data.shape[1] == 3, f"The number of channels is {data.shape[1]}"
-    assert data.max() <= 1.0
-    assert data.min() >= 0.0
+    assert data.max() <= 1.0, f"the max value is {data.max()}"
+    assert data.min() >= 0.0, f"the min value is {data.min()}"
 
     return train_data, test_data
 
@@ -68,8 +71,8 @@ def get_encoder_decoder(dataset_name: str, input_dim: Tuple[int], config):
         decoder = benchmarks.mnist.Decoder_AE_MNIST(ae_config)
 
     elif "CelebA" in dataset_name:
-        encoder = benchmarks.celeba.Encoder_VAE_CelebA(ae_config)
-        decoder = benchmarks.celeba.Decoder_AE_CelebA(ae_config)
+        encoder = benchmarks.celeba.Encoder_VAE_CELEBA(ae_config)
+        decoder = benchmarks.celeba.Decoder_AE_CELEBA(ae_config)
 
     return encoder, decoder
 
