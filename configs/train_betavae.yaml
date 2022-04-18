@@ -1,0 +1,23 @@
+data_dir: "data/"
+
+dataset_name: "CIFAR10"
+
+model_name: "BetaVAE" 
+
+model_config:
+  latent_dim: 16
+  beta : 2
+
+trainer_name: "BaseTrainer"
+training_config:
+  output_dir: "./results"
+  learning_rate: 0.001
+  batch_size: 128
+  num_epochs: 100
+  seed: 42
+
+
+
+
+
+  
