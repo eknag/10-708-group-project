@@ -1,0 +1,18 @@
+datasets:
+  - "CIFAR10"
+  - "CIFAR100" 
+  - "Flowers102"
+
+model: "VAE" 
+
+model_config:
+  - latent_dim: 16
+
+training_config:
+  output_dir: "./results"
+  learning_rate: 0.001
+  batch_size: 128
+  num_epochs: 100
+
+
+  
