@@ -15,7 +15,7 @@ from experiments.model_get_sv import compute_module_input_sizes, execute_through
 
 n_sv = 200
 
-def get_lipschitz(model, out_dir, model_name):
+def get_lipschitz(model, out_dir, model_name):   
     # Taken from experiments/model_get_sv.py.  Assumes eval() has already been run on the model.
     for p in model.parameters():
         p.requires_grad = False

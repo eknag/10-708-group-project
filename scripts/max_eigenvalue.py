@@ -88,7 +88,7 @@ def _norm_gradient_sq(linear_fun, v):
 
 
 def k_generic_power_method(affine_fun, input_size, n_singular_values, eps=1e-8,
-                           max_iter=500, use_cuda=False, verbose=True):
+                           max_iter=500, use_cuda=True, verbose=True):
     """ Return the k highest eigenvalues of the linear part of
     `affine_fun` and it's left / right associated singular vectors.
 

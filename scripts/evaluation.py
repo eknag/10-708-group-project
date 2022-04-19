@@ -21,7 +21,6 @@ from matplotlib import pyplot as plt
 from lipschitz_calc import get_lipschitz
 
 
-LIPSCHITZ_SING_VAL_PATH = "/lip_singular_values/"
 ENCODER_NAME = "_encoder"
 DECODER_NAME = "_decoder"
 
@@ -86,9 +85,9 @@ def evaluate(
     model.eval()
 
     if lipschitz:
-        spectral, lip = get_lipschitz(model.encoder, output_dir + LIPSCHITZ_SING_VAL_PATH, model_name + ENCODER_NAME)
+        spectral, lip = get_lipschitz(model.encoder, output_dir, model_name + ENCODER_NAME)
         print("Encoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
-        spectral, lip = get_lipschitz(model.decoder, output_dir + LIPSCHITZ_SING_VAL_PATH, model_name + DECODER_NAME)
+        spectral, lip = get_lipschitz(model.decoder, output_dir, model_name + DECODER_NAME)
         print("Decoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
 
     SAMPLER = get_sampler(sampler_name)
