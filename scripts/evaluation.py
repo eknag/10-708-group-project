@@ -1,6 +1,7 @@
 from __future__ import annotations
 from argparse import ArgumentParser
 from pythae.models import *
+from pythae.models.crvae.crvae_model import CRVAE
 from pythae.samplers import *
 from pythae.models import DVAE
 from torchvision import datasets
@@ -16,6 +17,13 @@ import dotsi
 from PIL import Image
 import numpy as np
 from matplotlib import pyplot as plt
+
+from lipschitz_calc import get_lipschitz
+
+
+LIPSCHITZ_SING_VAL_PATH = "/lip_singular_values/"
+ENCODER_NAME = "_encoder"
+DECODER_NAME = "_decoder"
 
 
 def get_model(model_name: str) -> VAE:
@@ -63,6 +71,7 @@ def evaluate(
     output_dir: str,
     model_dir: str,
     dataset_dir: str,
+    lipschitz: bool
 ) -> dict[str, float]:
 
     MODEL = get_model(model_name)
@@ -75,6 +84,12 @@ def evaluate(
     model_file = os.path.join(get_newest_file(model_dir), "final_model")
     model: VAE = MODEL.load_from_folder(model_file)
     model.eval()
+
+    if lipschitz:
+        spectral, lip = get_lipschitz(model.encoder, output_dir + LIPSCHITZ_SING_VAL_PATH, model_name + ENCODER_NAME)
+        print("Encoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
+        spectral, lip = get_lipschitz(model.decoder, output_dir + LIPSCHITZ_SING_VAL_PATH, model_name + DECODER_NAME)
+        print("Decoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
 
     SAMPLER = get_sampler(sampler_name)
     sampler = SAMPLER(model=model)
@@ -159,6 +174,8 @@ def main():
                 output_dir,
                 model_dir,
                 dataset_dir,
+                # TODO(as) make this a command line flag
+                lipschitz=True
             )
             dataset_performance[model_name] = results
         performances[dataset_name] = dataset_performance
