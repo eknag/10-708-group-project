@@ -11,8 +11,17 @@ import pythae.trainers as trainers
 import torch
 import yaml
 from torchvision import datasets
+from pythae.data.datasets import FolderDataset
 import torchvision
 import os
+import glob
+
+def generate_temp_datalist(root: str) -> List[str]:
+    extensions = ["jpg", "jpeg", "png"]
+    filenames = []
+    for ext in extensions:
+        filenames.extend(glob.glob(f"{root}/**/*.{ext}", recursive = True))
+    return filenames
 
 
 def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarray]]:
@@ -27,6 +36,13 @@ def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarr
         dataset = datasets.CIFAR100(root=config["data_dir"], train=True, download=True,)
     elif dataset_name == "MNIST":
         dataset = datasets.MNIST(root=config["data_dir"], train=True, download=True,)
+    elif dataset_name == "CelebA":
+        all_filenames = generate_temp_datalist(root=config["data_dir"])
+        train_filenames = all_filenames[: int(train_percentage * len(all_filenames))]
+        test_filenames = all_filenames[int(train_percentage * len(all_filenames)) :]
+        train_data = FolderDataset("", train_filenames, (64, 64))
+        test_data = FolderDataset("", test_filenames, (64, 64))
+        return train_data, test_data
     else:
         raise ValueError(f"The dataset {dataset_name} is not implemented.")
 

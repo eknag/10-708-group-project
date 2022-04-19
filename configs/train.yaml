@@ -1,6 +1,6 @@
-data_dir: "data/"
+data_dir: "../data/rgb_dataset"
 
-dataset_name: "CIFAR10"
+dataset_name: "CelebA"
 
 model_name: "VAE" 
 
