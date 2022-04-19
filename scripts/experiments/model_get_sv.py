@@ -9,6 +9,8 @@ from max_eigenvalue import k_generic_power_method
 
 n_sv = 500
 
+MAX_ITER = 500
+
 def spec_mnist(self, input, output):
     print(self)
     if is_convolution_or_linear(self):
@@ -17,7 +19,7 @@ def spec_mnist(self, input, output):
 
         s, u, v = k_generic_power_method(self.forward, self.input_sizes[0],
                 n_sv,
-                max_iter=1,
+                max_iter=MAX_ITER,
                 use_cuda=torch.cuda.is_available())
         self.spectral_norm = s
         self.u = u

@@ -14,7 +14,7 @@ from seqlip import optim_nn_pca_greedy
 
 from experiments.model_get_sv import compute_module_input_sizes, execute_through_model, save_singular, spec_mnist
 
-
+# TODO(as) play around with this and see what happens, can go up to 500
 n_sv = 200
 
 def get_lipschitz(model, out_dir, model_name, calc_sing=False):  
@@ -94,6 +94,7 @@ def model_operations(model, dest_dir):
             print('Ratio layer i+1: {:.4f}'.format(float(sv[0] / sv[-1]))) 
             U, V = U.cpu(), V.cpu()               
 
+            # Set up
             if conv_lin_idx == 0:
                 sigmau = torch.diag(torch.Tensor(su))
             else:
@@ -109,7 +110,8 @@ def model_operations(model, dest_dir):
 
             lip_spectral *= expected
 
-            curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=False)
+            # Calculate approximation
+            curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=torch.cuda.is_available())
             print('Approximation: {}'.format(curr))
             lip *= float(curr)
             conv_lin_idx += 1

@@ -153,6 +153,9 @@ def k_generic_power_method(affine_fun, input_size, n_singular_values, eps=1e-8,
         while not stop_criterion:
             previous = v
             v = _k_norm_gradient_sq(linear_fun, v, i)
+            if use_cuda:
+                v.cuda()
+                previous.cuda()
             v = F.normalize(v.view(v.shape[0], -1), p=2, dim=1).view(input_size)
             stop_criterion = (torch.norm(v - previous) < eps) or (it > max_iter)
             it += 1
@@ -177,6 +180,8 @@ def k_generic_power_method(affine_fun, input_size, n_singular_values, eps=1e-8,
 def _k_norm_gradient_sq(linear_fun, v, i):
     v = Variable(v, requires_grad=True)
     loss = torch.norm(linear_fun(v, i))**2
+    if torch.cuda.is_available():
+        loss.cuda()
     loss.backward()
     return v.grad.data
 

@@ -210,7 +210,7 @@ def optim_nn_greedy(f_l, f_r, input_size, use_cuda=False, max_iter=200, verbose=
     return current_spec, sigma
 
 
-def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=False):
+def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
     """ U is k x n and V is n x k
 
     Goal of this optimisation method is to get an approximation of the upper
