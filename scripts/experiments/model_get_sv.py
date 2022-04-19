@@ -37,7 +37,7 @@ def save_singular(model, dest_dir):
             if is_convolution_or_linear(layer[idx]):
                 torch.save(layer[idx].spectral_norm, open(output_name + "_spectral", 'wb'))
                 torch.save(layer[idx].u, open(output_name + "_left_singular", 'wb'))
-                torch.save(layer[idx].v, open(output_name + "_left_singular", 'wb'))
+                torch.save(layer[idx].v, open(output_name + "_right_singular", 'wb'))
 
 def load_singular(model, dest_dir):
     layer_names = Counter()
