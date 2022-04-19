@@ -17,9 +17,6 @@ import os
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-
 def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarray]]:
     """
     Get the dataset from the name.
