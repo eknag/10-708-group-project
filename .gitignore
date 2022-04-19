@@ -111,3 +111,6 @@ ENV/
 
 # vscode
 .vscode
+
+# generated image samples
+samples/
