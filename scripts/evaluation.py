@@ -2,8 +2,6 @@ from __future__ import annotations
 from argparse import ArgumentParser
 from pythae.models import *
 from pythae.samplers import *
-from pythae.models import DVAE
-from torchvision import datasets
 from torchvision.datasets.vision import VisionDataset
 import torchvision
 from pytorch_fid.fid_score import calculate_fid_given_paths
