@@ -17,7 +17,11 @@ from experiments.model_get_sv import compute_module_input_sizes, execute_through
 # TODO(as) play around with this and see what happens, can go up to 500
 n_sv = 200
 
-def get_lipschitz(model, out_dir, model_name, calc_sing=False):  
+def get_lipschitz(model, out_dir, model_name, calc_sing=True):  
+    # Handle formatting of output directory
+    if out_dir[-1] != '/':
+        out_dir += '/'
+
     if calc_sing:
         # Taken from experiments/model_get_sv.py.  Assumes eval() has already been run on the model.
         for p in model.parameters():
