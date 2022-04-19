@@ -84,9 +84,11 @@ class FolderDataset(Dataset):
                 lines = file_list
             else:
                 raise ValueError("Cannot recognize the provided filelist for the dataset")
-
-            for line in lines:
-                self.filenames.append("{:s}/{:s}".format(root, line))
+            if root:
+                for line in lines:
+                    self.filenames.append("{:s}/{:s}".format(root, line))
+            else:
+                self.filenames = lines
         else: # if the filelist is not provided, we scan through all files under the folder
             for ext in self.extensions:
                 self.filenames.extend(glob.glob(f"{root}/**/*.{ext}", recursive = True))
@@ -109,17 +111,28 @@ class FolderDataset(Dataset):
             torch.Tensor
             """
         # Select sample
-        filename = self.filenames[index]
-        image = Image.open(filename)
+
+        filenames = self.filenames[index]
+        if type(filenames) is str:
+            filenames = [filenames]
         
-        data = torch.Tensor(self.__resize__(asarray(image))).permute(2, 0, 1)
-        if self.target_device is not None:
-            data = data.to(self.target_device)
-        if data.max() > 1.0:
-            data = data/255
-        if (data != data).sum() > 0: # if data has nan
-            return self.__getitem__((index + 1)%len(self.filenames))
-        return {"data": data, "label": None}
+        
+        data_batch = []
+        for filename in filenames:
+            image = Image.open(filename)
+            
+            data = torch.Tensor(self.__resize__(asarray(image))).permute(2, 0, 1)
+            if self.target_device is not None:
+                data = data.to(self.target_device)
+            if data.max() > 1.0:
+                data = data/255
+            if (data != data).sum() > 0: # if data has nan
+                data = self.__getitem__((index + 1)%len(self.filenames))
+            data_batch.append(data)
+        if len(data_batch) == 1:
+            return {"data": data_batch[0], "label": torch.zeros(1)}
+        else:
+            return {"data": torch.stack(data_batch), "label": torch.zeros(1)}
 
     def __resize__(self, image):
         '''Resize the image to the desired shape
