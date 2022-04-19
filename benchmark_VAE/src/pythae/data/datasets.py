@@ -149,7 +149,7 @@ class FolderDataset(Dataset):
             h_needed = current_h
         
         image = image[(current_h-h_needed)//2:(current_h-h_needed)//2 + h_needed, (current_w-w_needed)//2:(current_w-w_needed)//2 + w_needed]
-        image = resize(image, [target_h, target_h])
+        image = resize(image, [target_h, target_w])
         return image
 
             
