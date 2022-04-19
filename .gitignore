@@ -114,3 +114,6 @@ ENV/
 
 # generated image samples
 samples/
+
+# ray tune hyperparam optimization logging
+ray_results/

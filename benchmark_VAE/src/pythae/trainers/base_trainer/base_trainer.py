@@ -10,6 +10,8 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
+from ray import tune
+
 from ...customexception import ModelError
 from ...data.datasets import BaseDataset
 from ...models import BaseAE
@@ -274,7 +276,7 @@ class BaseTrainer:
         best_train_loss = 1e10
         best_eval_loss = 1e10
 
-        for epoch in range(1, self.training_config.num_epochs+1):
+        for epoch in range(1, self.training_config.num_epochs + 1):
 
             epoch_train_loss = self.train_step(epoch)
 
@@ -309,7 +311,9 @@ class BaseTrainer:
                 self.training_config.steps_saving is not None
                 and epoch % self.training_config.steps_saving == 0
             ):
-                self.save_checkpoint(model=best_model, dir_path=training_dir, epoch=epoch)
+                self.save_checkpoint(
+                    model=best_model, dir_path=training_dir, epoch=epoch
+                )
                 logger.info(f"Saved checkpoint at epoch {epoch}\n")
 
                 if log_verbose:
@@ -325,6 +329,8 @@ class BaseTrainer:
                 logger.info(
                     f"Epoch {epoch}: Eval loss: {np.round(epoch_eval_loss, 10)}"
                 )
+
+                tune.report(eval_loss=epoch_eval_loss, train_loss=epoch_train_loss)
                 logger.info(
                     "----------------------------------------------------------------"
                 )
@@ -368,7 +374,7 @@ class BaseTrainer:
                     f"Eval of epoch {epoch}/{self.training_config.num_epochs}"
                 )
 
-                #update epoch in model
+                # update epoch in model
                 self.model.epoch = epoch
 
                 inputs = self._set_inputs_to_device(inputs)
