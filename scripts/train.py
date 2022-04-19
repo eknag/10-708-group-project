@@ -14,6 +14,8 @@ from torchvision import datasets
 import torchvision
 import os
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarray]]:
     """
@@ -133,7 +135,7 @@ def correct_output_dir(config):
     return config
 
 
-def main(config):
+def train(config):
     """
     Main function.
     """
@@ -162,11 +164,10 @@ def main(config):
 
 if __name__ == "__main__":
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/train.yaml")
     args = parser.parse_args()
 
     config = yaml.safe_load(open(args.config, "r"))
 
-    main(config)
+    train(config)
