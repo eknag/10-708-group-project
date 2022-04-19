@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     config = yaml.safe_load(open(args.config, "r"))
 
-    output_dir = config["trainer_config"]["output_dir"]
+    output_dir = config["training_config"]["output_dir"]
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -32,5 +32,5 @@ if __name__ == "__main__":
         "change_aspect_ratio",
     ]:
         config["model_config"]["aug_type"] = aug_type
-        config["trainer_config"]["output_dir"] = output_dir
+        config["training_config"]["output_dir"] = output_dir
         train(config)
