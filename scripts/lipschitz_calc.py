@@ -22,13 +22,21 @@ def get_lipschitz(model, out_dir, model_name, calc_sing=True):
     if out_dir[-1] != '/':
         out_dir += '/'
 
+    # TODO(as) just calculate singular values for now (already did this one)
+    if model_name == "VAE_encoder":
+        return -1, -1
+
     if calc_sing:
         # Taken from experiments/model_get_sv.py.  Assumes eval() has already been run on the model.
         for p in model.parameters():
             p.requires_grad = False
 
         # Stores largest singular values inside the model itself
-        input_size = model.input_dim
+        if "encoder" in model_name:
+            input_size = model.input_dim
+        else:
+            # decoder input is a vector
+            input_size = (1, 1, 1, model.layers[0].in_features)
         if len(input_size) == 3:
             input_size = [1, *input_size]
         elif len(input_size) != 4:
@@ -41,7 +49,9 @@ def get_lipschitz(model, out_dir, model_name, calc_sing=True):
         save_singular(model, out_dir)
 
     # Taken from experiments/model.py
-    return model_operations(model, out_dir)
+    # return model_operations(model, out_dir)
+    # TODO(as) just calculate singular values for now
+    return -1, -1
 
 
 
