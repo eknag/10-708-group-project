@@ -87,8 +87,8 @@ def _norm_gradient_sq(linear_fun, v):
     return v.grad.data
 
 
-def k_generic_power_method(affine_fun, input_size, n_singular_values, eps=1e-8,
-                           max_iter=500, use_cuda=True, verbose=True):
+def k_generic_power_method(affine_fun, input_size, n_singular_values, eps=1e-7,
+                           max_iter=300, use_cuda=True, verbose=True):
     """ Return the k highest eigenvalues of the linear part of
     `affine_fun` and it's left / right associated singular vectors.
 
@@ -144,18 +144,18 @@ def k_generic_power_method(affine_fun, input_size, n_singular_values, eps=1e-8,
     for i in tqdm(range(n_singular_values)):
         # Initialise with random values
         v = torch.randn(input_size)
-        v = F.normalize(v.view(v.shape[0], -1), p=2, dim=1).view(input_size)
         if use_cuda:
             v = v.cuda()
+        v = F.normalize(v.view(v.shape[0], -1), p=2, dim=1).view(input_size)
 
         stop_criterion = False
         it = 0
         while not stop_criterion:
             previous = v
-            v = _k_norm_gradient_sq(linear_fun, v, i)
             if use_cuda:
                 v.cuda()
                 previous.cuda()
+            v = _k_norm_gradient_sq(linear_fun, v, i)
             v = F.normalize(v.view(v.shape[0], -1), p=2, dim=1).view(input_size)
             stop_criterion = (torch.norm(v - previous) < eps) or (it > max_iter)
             it += 1

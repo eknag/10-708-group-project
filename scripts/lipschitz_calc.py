@@ -22,10 +22,6 @@ def get_lipschitz(model, out_dir, model_name, calc_sing=True):
     if out_dir[-1] != '/':
         out_dir += '/'
 
-    # TODO(as) just calculate singular values for now (already did this one)
-    if model_name == "VAE_encoder":
-        return -1, -1
-
     if calc_sing:
         # Taken from experiments/model_get_sv.py.  Assumes eval() has already been run on the model.
         for p in model.parameters():
@@ -46,7 +42,7 @@ def get_lipschitz(model, out_dir, model_name, calc_sing=True):
         execute_through_model(spec_mnist, model)
         
         # Store singular values in files
-        save_singular(model, out_dir)
+        save_singular(model, out_dir, model_name)
 
     # Taken from experiments/model.py
     # return model_operations(model, out_dir)
@@ -57,7 +53,7 @@ def get_lipschitz(model, out_dir, model_name, calc_sing=True):
 
 
 
-def model_operations(model, dest_dir):
+def model_operations(model, dest_dir, model_name):
     """ Starting point of the script is a saving of all singular values and vectors
     in mnist_save/
 
@@ -75,60 +71,58 @@ def model_operations(model, dest_dir):
     # Determine number of convolution/linear layers
     relevant_layer_cnt = 0
     for layer in model.layers:
-        for idx in range(len(layer)):
-            if is_convolution_or_linear(layer[idx]):
-                relevant_layer_cnt += 1
+        if is_convolution_or_linear(layer):
+            relevant_layer_cnt += 1
 
     # Indices of convolutions and linear layers
     layer_names = Counter()
     conv_lin_idx = 0
     for layer in model.layers:
-        for idx in range(len(layer)):    
-            if not is_convolution_or_linear(layer[idx]):
-                continue
+        if not is_convolution_or_linear(layer):
+            continue
 
-            print('Dealing with {}'.format(layer[idx]._get_name()))
+        print('Dealing with {}'.format(layer[idx]._get_name()))
 
-            # Generate file name
-            layer_name  = layer[idx]._get_name() + "_" + str(layer_names[layer[idx]._get_name()])
-            layer_names[layer[idx]._get_name()] += 1
-            output_name = dest_dir + model._get_name() + "_" + layer_name
+        # Generate file name
+        layer_name  = layer[idx]._get_name() + "_" + str(layer_names[layer[idx]._get_name()])
+        layer_names[layer[idx]._get_name()] += 1
+        output_name = dest_dir + model_name + "_" + layer_name
 
-            # Load from file
-            U = torch.load(output_name + "_left_singular")
-            U = torch.cat(U[:n_sv], dim=0).view(n_sv, -1)
-            su = torch.load(output_name + "_spectral")
-            su = su[:n_sv]
+        # Load from file
+        U = torch.load(output_name + "_left_singular")
+        U = torch.cat(U[:n_sv], dim=0).view(n_sv, -1)
+        su = torch.load(output_name + "_spectral")
+        su = su[:n_sv]
 
-            V = torch.load(output_name + "_right_singular")
-            V = torch.cat(V[:n_sv], dim=0).view(n_sv, -1)
-            sv = torch.load(output_name + "_spectral")
-            sv = sv[:n_sv]
-            print('Ratio layer i  : {:.4f}'.format(float(su[0] / su[-1])))
-            print('Ratio layer i+1: {:.4f}'.format(float(sv[0] / sv[-1]))) 
-            U, V = U.cpu(), V.cpu()               
+        V = torch.load(output_name + "_right_singular")
+        V = torch.cat(V[:n_sv], dim=0).view(n_sv, -1)
+        sv = torch.load(output_name + "_spectral")
+        sv = sv[:n_sv]
+        print('Ratio layer i  : {:.4f}'.format(float(su[0] / su[-1])))
+        print('Ratio layer i+1: {:.4f}'.format(float(sv[0] / sv[-1]))) 
+        U, V = U.cpu(), V.cpu()               
 
-            # Set up
-            if conv_lin_idx == 0:
-                sigmau = torch.diag(torch.Tensor(su))
-            else:
-                sigmau = torch.diag(torch.sqrt(torch.Tensor(su)))
+        # Set up
+        if conv_lin_idx == 0:
+            sigmau = torch.diag(torch.Tensor(su))
+        else:
+            sigmau = torch.diag(torch.sqrt(torch.Tensor(su)))
 
-            if conv_lin_idx == relevant_layer_cnt - 1:
-                sigmav = torch.diag(torch.Tensor(sv))
-            else:
-                sigmav = torch.diag(torch.sqrt(torch.Tensor(sv)))
+        if conv_lin_idx == relevant_layer_cnt - 1:
+            sigmav = torch.diag(torch.Tensor(sv))
+        else:
+            sigmav = torch.diag(torch.sqrt(torch.Tensor(sv)))
 
-            expected = sigmau[0,0] * sigmav[0,0]
-            print('Expected: {}'.format(expected))
+        expected = sigmau[0,0] * sigmav[0,0]
+        print('Expected: {}'.format(expected))
 
-            lip_spectral *= expected
+        lip_spectral *= expected
 
-            # Calculate approximation
-            curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=torch.cuda.is_available())
-            print('Approximation: {}'.format(curr))
-            lip *= float(curr)
-            conv_lin_idx += 1
+        # Calculate approximation
+        curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=torch.cuda.is_available())
+        print('Approximation: {}'.format(curr))
+        lip *= float(curr)
+        conv_lin_idx += 1
 
 
     print('Lipschitz spectral: {}'.format(lip_spectral))
