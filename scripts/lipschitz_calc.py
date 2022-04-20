@@ -14,7 +14,7 @@ from seqlip import optim_nn_pca_greedy
 
 from experiments.model_get_sv import compute_module_input_sizes, execute_through_model, save_singular, spec_mnist
 
-# TODO(as) play around with this and see what happens, can go up to 500
+# Set to 200 in the original repo, but they train 500 for some reason
 n_sv = 200
 
 def get_lipschitz(model, out_dir, model_name, calc_sing=True):  

@@ -9,7 +9,7 @@ from max_eigenvalue import k_generic_power_method
 
 n_sv = 200
 
-MAX_ITER = 300
+MAX_ITER = 500
 
 def spec_mnist(self, input, output):
     print(self)
