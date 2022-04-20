@@ -69,23 +69,25 @@ def model_operations(model, dest_dir, model_name):
     lip_spectral = 1
 
     # Determine number of convolution/linear layers
+    # TODO(as) need to add indexing here to handle nested layers (see save_singular)
     relevant_layer_cnt = 0
     for layer in model.layers:
         if is_convolution_or_linear(layer):
             relevant_layer_cnt += 1
 
     # Indices of convolutions and linear layers
+    # TODO(as) need to add indexing here to handle nested layers (see save_singular)
     layer_names = Counter()
     conv_lin_idx = 0
     for layer in model.layers:
         if not is_convolution_or_linear(layer):
             continue
 
-        print('Dealing with {}'.format(layer[idx]._get_name()))
+        print('Dealing with {}'.format(layer._get_name()))
 
         # Generate file name
-        layer_name  = layer[idx]._get_name() + "_" + str(layer_names[layer[idx]._get_name()])
-        layer_names[layer[idx]._get_name()] += 1
+        layer_name  = layer._get_name() + "_" + str(layer_names[layer._get_name()])
+        layer_names[layer._get_name()] += 1
         output_name = dest_dir + model_name + "_" + layer_name
 
         # Load from file

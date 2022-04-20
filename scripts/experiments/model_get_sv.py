@@ -32,15 +32,25 @@ def spec_mnist(self, input, output):
 def save_singular(model, dest_dir, model_name):
     layer_names = Counter()
     for layer in model.layers:
-        layer_name  = layer._get_name() + "_" + str(layer_names[layer._get_name()])
-        layer_names[layer._get_name()] += 1
-        output_name = dest_dir + model_name + "_" + layer_name
-        if is_convolution_or_linear(layer):
-            torch.save(layer.spectral_norm, open(output_name + "_spectral", 'wb'))
-            torch.save(layer.u, open(output_name + "_left_singular", 'wb'))
-            torch.save(layer.v, open(output_name + "_right_singular", 'wb'))
+        if "Linear" in layer._get_name():
+            layer_names = layer_write_singular(layer, dest_dir, model_name, layer_names)
+        else:
+            for idx in range(len(layer)):
+                if is_convolution_or_linear(layer[idx]):
+                    layer_names = layer_write_singular(layer[idx], dest_dir, model_name, layer_names)
+
+def layer_write_singular(layer, dest_dir, model_name, layer_names):
+    layer_name  = layer._get_name() + "_" + str(layer_names[layer._get_name()])
+    layer_names[layer._get_name()] += 1
+    output_name = dest_dir + model_name + "_" + layer_name
+    print("(Model: ", model_name, ") Name: ", layer_name, ", stored: ", output_name)
+    torch.save(layer.spectral_norm, open(output_name + "_spectral", 'wb'))
+    torch.save(layer.u, open(output_name + "_left_singular", 'wb'))
+    torch.save(layer.v, open(output_name + "_right_singular", 'wb'))
+    return layer_names
 
 def load_singular(model, dest_dir, model_name):
+    # TODO(as) need to add indexing here to handle nested layers (see save_singular)
     layer_names = Counter()
     for layer in model.layers:
         layer_name  = layer._get_name() + "_" + str(layer_names[layer._get_name()])
