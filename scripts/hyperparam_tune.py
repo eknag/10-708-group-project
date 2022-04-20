@@ -16,22 +16,19 @@ if __name__ == "__main__":
 
     config = yaml.safe_load(open(args.base_config, "r"))
 
-    lr = tune.loguniform(1e-6, 1e-2)
-    batch_size = tune.choice([64, 256])
-    # gamma = hp.choice("gamma", [0.1, 0.001])
+    latent_dim = tune.grid_search([2, 16, 50, 128, 512, 1024, 4096])
 
-    config["training_config"]["learning_rate"] = lr
-    config["training_config"]["batch_size"] = batch_size
+    config["model_config"]["latent_dim"] = latent_dim
 
     ray.init(log_to_driver=False)
 
     analysis = tune.run(
         train,
         config=config,
-        num_samples=10,
+        num_samples=1,
         resources_per_trial={"gpu": 1, "cpu": 8},
         raise_on_failed_trial=False,
         scheduler=ASHAScheduler(metric="eval_loss", mode="min"),
         local_dir="./ray_results",
-        name="crvae_simple_training_params",
+        name="latent_dim_test",
     )
