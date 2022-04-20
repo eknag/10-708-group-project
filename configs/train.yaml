@@ -1,4 +1,4 @@
-data_dir: "../data/rgb_dataset"
+data_dir: "./data"
 
 dataset_name: "CelebA"
 

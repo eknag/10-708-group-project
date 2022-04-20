@@ -16,14 +16,35 @@ import torchvision
 import os
 import glob
 
+
 def generate_temp_datalist(root: str) -> List[str]:
     extensions = ["jpg", "jpeg", "png"]
     filenames = []
     for ext in extensions:
-        filenames.extend(glob.glob(f"{root}/**/*.{ext}", recursive = True))
+        filenames.extend(glob.glob(f"{root}/**/*.{ext}", recursive=True))
     return filenames
 
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+def download_celeba(data_dir):
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    # download celeba via gdown
+    celeba_url = "https://drive.google.com/u/0/uc?id=1ZRbdUMfeUMjrqGBbFgJlUIRRXqV7TeFF"
+    os.system(f"gdown -O {os.path.join(data_dir, 'img_align_celeba.zip')} {celeba_url}")
+
+    # unzip img_align_celeba.zip
+    os.system(
+        f"unzip {os.path.join(data_dir,'img_align_celeba.zip')} -d {os.path.join(data_dir,'img_align_celeba')}"
+    )
+
+    os.system(f"rm {os.path.join(data_dir,'img_align_celeba.zip')}")
+
+    assert os.path.exists(os.path.join(data_dir, "img_align_celeba"))
+    assert len(os.listdir(os.path.join(data_dir, "img_align_celeba"))) > 0
 
 
 def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarray]]:
@@ -33,24 +54,15 @@ def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarr
     train_percentage = 0.80
 
     if dataset_name == "CIFAR10":
-        dataset = datasets.CIFAR10(
-            root=config["data_dir"],
-            train=True,
-            download=True,
-        )
+        dataset = datasets.CIFAR10(root=config["data_dir"], train=True, download=True,)
     elif dataset_name == "CIFAR100":
-        dataset = datasets.CIFAR100(
-            root=config["data_dir"],
-            train=True,
-            download=True,
-        )
+        dataset = datasets.CIFAR100(root=config["data_dir"], train=True, download=True,)
     elif dataset_name == "MNIST":
-        dataset = datasets.MNIST(
-            root=config["data_dir"],
-            train=True,
-            download=True,
-        )
+        dataset = datasets.MNIST(root=config["data_dir"], train=True, download=True,)
     elif dataset_name == "CelebA":
+        celeba_dir = os.path.join(config["data_dir"], "img_align_celeba")
+        if not os.path.exists(celeba_dir) or len(os.listdir(celeba_dir)) > 0:
+            download_celeba(config["data_dir"])
         all_filenames = generate_temp_datalist(root=config["data_dir"])
         train_filenames = all_filenames[: int(train_percentage * len(all_filenames))]
         test_filenames = all_filenames[int(train_percentage * len(all_filenames)) :]
@@ -120,32 +132,24 @@ def get_model(
     """
 
     if model_name == "VAE":
-        model_config = models.VAEConfig(
-            input_dim=input_dim,
-            **config["model_config"],
-        )
+        model_config = models.VAEConfig(input_dim=input_dim, **config["model_config"],)
 
         model = models.VAE(model_config, encoder, decoder)
 
     elif model_name == "BetaVAE":
         model_config = models.BetaVAEConfig(
-            input_dim=input_dim,
-            **config["model_config"],
+            input_dim=input_dim, **config["model_config"],
         )
 
         model = models.BetaVAE(model_config, encoder, decoder)
 
     elif model_name == "DVAE":
-        model_config = models.DVAEConfig(
-            input_dim=input_dim,
-            **config["model_config"],
-        )
+        model_config = models.DVAEConfig(input_dim=input_dim, **config["model_config"],)
         model = models.DVAE(model_config, encoder, decoder)
 
     elif model_name == "CRVAE":
         model_config = models.CRVAEConfig(
-            input_dim=input_dim,
-            **config["model_config"],
+            input_dim=input_dim, **config["model_config"],
         )
 
         model = models.CRVAE(model_config, encoder, decoder)
@@ -160,10 +164,7 @@ def get_pipeline(trainer_name: str, model: models.VAE, config) -> trainers.BaseT
     else:
         raise ValueError(f"The trainer {trainer_name} is not implemented.")
 
-    pipeline = pipelines.TrainingPipeline(
-        model=model,
-        training_config=training_config,
-    )
+    pipeline = pipelines.TrainingPipeline(model=model, training_config=training_config,)
 
     return pipeline
 
@@ -195,11 +196,7 @@ def train(config):
 
     # get the model
     model = get_model(
-        config["model_name"],
-        train_data.shape[1:],
-        encoder,
-        decoder,
-        config,
+        config["model_name"], train_data.shape[1:], encoder, decoder, config,
     )
 
     # get the pipeline
