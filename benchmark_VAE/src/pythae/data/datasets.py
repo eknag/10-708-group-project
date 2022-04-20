@@ -10,6 +10,12 @@ from PIL import Image
 from numpy import asarray
 from skimage.transform import resize
 
+# import to load image with torchvision
+from torchvision.io import read_image, write_jpeg
+from torchvision import transforms
+import numpy as np
+
+
 class BaseDataset(Dataset):
     """This class is the Base class for pythae's dataset
 
@@ -50,15 +56,18 @@ class BaseDataset(Dataset):
 
         return {"data": X, "labels": y}
 
+
 class FolderDataset(Dataset):
-    ''' This class is an alternative to the BaseDataset class
+    """ This class is an alternative to the BaseDataset class
 
     Instead of loading all data once, this dataloader loads data batch by batch
 
-    '''
+    """
+
     extensions = ["jpg", "jpeg", "png"]
+
     def __init__(self, root: str, file_list=None, output_size=(64, 64)):
-        ''' Initialize the dataset with a directory path (and a potential file list)
+        """ Initialize the dataset with a directory path (and a potential file list)
 
         If the filelist is provided, then we simply concatenate the file listed in the list,
 
@@ -70,12 +79,12 @@ class FolderDataset(Dataset):
             output_size (tuple(int, int)): due to the nature of custom datasets, 
                                its necessary to know the desired output size
 
-        '''
+        """
         self.filenames = []
         self.output_size = output_size
         self.target_device = None
         self.shape = [1, 3, output_size[0], output_size[1]]
-        if file_list: # if a filelist is provided
+        if file_list:  # if a filelist is provided
             if type(file_list) == str:
                 lines = []
                 with open(file_list, "r") as f:
@@ -83,20 +92,21 @@ class FolderDataset(Dataset):
             elif type(file_list) == list:
                 lines = file_list
             else:
-                raise ValueError("Cannot recognize the provided filelist for the dataset")
+                raise ValueError(
+                    "Cannot recognize the provided filelist for the dataset"
+                )
             if root:
                 for line in lines:
                     self.filenames.append("{:s}/{:s}".format(root, line))
             else:
                 self.filenames = lines
-        else: # if the filelist is not provided, we scan through all files under the folder
+        else:  # if the filelist is not provided, we scan through all files under the folder
             for ext in self.extensions:
-                self.filenames.extend(glob.glob(f"{root}/**/*.{ext}", recursive = True))
-
+                self.filenames.extend(glob.glob(f"{root}/**/*.{ext}", recursive=True))
 
     def set_device(self, device):
         self.target_device = device
-    
+
     def __len__(self):
         return len(self.filenames)
 
@@ -115,49 +125,51 @@ class FolderDataset(Dataset):
         filenames = self.filenames[index]
         if type(filenames) is str:
             filenames = [filenames]
-        
-        
+
         data_batch = []
         for filename in filenames:
-            image = Image.open(filename)
-            
-            data = torch.Tensor(self.__resize__(asarray(image))).permute(2, 0, 1)
-            if self.target_device is not None:
-                data = data.to(self.target_device)
-            if data.max() > 1.0:
-                data = data/255
-            if (data != data).sum() > 0: # if data has nan
-                data = self.__getitem__((index + 1)%len(self.filenames))
+            data = read_image(filename)
+
             data_batch.append(data)
-        if len(data_batch) == 1:
-            return {"data": data_batch[0], "label": torch.zeros(1)}
-        else:
-            return {"data": torch.stack(data_batch), "label": torch.zeros(1)}
+
+        data = torch.stack(data_batch)
+
+        if data.shape[-1] in [1, 3]:
+            data = data.permute(0, 3, 1, 2)
+
+        data = self.__resize__(data)
+
+        data = data / 255
+
+        data = data.squeeze(dim=0)
+
+        return {"data": data, "label": torch.zeros(1)}
 
     def __resize__(self, image):
-        '''Resize the image to the desired shape
-        '''
-        current_h, current_w, c = image.shape
+        """Resize the image to the desired shape
+        """
+
+        _, c, current_h, current_w = image.shape
+
         target_h, target_w = self.output_size
-        target_ar = target_h / target_w
 
-        h_needed = int(target_ar * current_w)
-        if h_needed <= current_h: # if the current_height can help reach the target aspect ratio with change w
-            w_needed = current_w
-        else:
-            w_needed = int(current_h / target_ar)
-            h_needed = current_h
-        
-        image = image[(current_h-h_needed)//2:(current_h-h_needed)//2 + h_needed, (current_w-w_needed)//2:(current_w-w_needed)//2 + w_needed]
-        image = resize(image, [target_h, target_w])
+        # get smaller side
+        smaller_side = min(current_h, current_w)
+
+        # center crop
+        resizer = transforms.Compose(
+            [
+                transforms.CenterCrop((smaller_side, smaller_side)),
+                transforms.Resize((target_h, target_w)),
+            ]
+        )
+
+        image = resizer(image)
+
         return image
-
-            
-
-
-
 
 
 if __name__ == "__main__":
     dataset = FolderDataset("../../../../../data")
-    print(dataset[0]['data'].size())
+    print(dataset[0]["data"].size())
+
