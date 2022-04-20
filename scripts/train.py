@@ -37,9 +37,7 @@ def download_celeba(data_dir):
     os.system(f"gdown -O {os.path.join(data_dir, 'img_align_celeba.zip')} {celeba_url}")
 
     # unzip img_align_celeba.zip
-    os.system(
-        f"unzip {os.path.join(data_dir,'img_align_celeba.zip')} -d {os.path.join(data_dir,'img_align_celeba')}"
-    )
+    os.system(f"unzip {os.path.join(data_dir,'img_align_celeba.zip')} -d {data_dir}")
 
     os.system(f"rm {os.path.join(data_dir,'img_align_celeba.zip')}")
 
@@ -61,7 +59,7 @@ def get_dataset(dataset_name: str, config) -> Tuple[Union[torch.Tensor, np.ndarr
         dataset = datasets.MNIST(root=config["data_dir"], train=True, download=True,)
     elif dataset_name == "CelebA":
         celeba_dir = os.path.join(config["data_dir"], "img_align_celeba")
-        if not os.path.exists(celeba_dir) or len(os.listdir(celeba_dir)) > 0:
+        if not os.path.exists(celeba_dir) or len(os.listdir(celeba_dir)) < 200000:
             download_celeba(config["data_dir"])
         all_filenames = generate_temp_datalist(root=config["data_dir"])
         train_filenames = all_filenames[: int(train_percentage * len(all_filenames))]
