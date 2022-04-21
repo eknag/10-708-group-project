@@ -242,8 +242,12 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
         highest_idx = -1
         for i in tqdm(range(len(sigma))):
             change = 1 - sigma[i] # if 1 then 0, if 0 then 1
-            m_change = torch.ger(U[:, i], V[i, :])
-            tmpM = M + (2 * change - 1) * m_change
+            U_helper = U[:, i]
+            V_helper = V[i, :]
+            if use_cuda:
+                U_helper.cuda()
+                V_helper.cuda()
+            tmpM = M + (2 * change - 1) * torch.outer(U_helper, V_helper)
             if use_cuda:
                 tmpM.cuda()
             spec = sp.linalg.norm(tmpM, 2)
