@@ -19,7 +19,7 @@ LIP_OUT_SUBDIR = "lipschitz"
 
 # Set to 200 in the original repo, but they train 500 for some reason
 n_sv = 200
-OPTIM_ITER = 10
+OPTIM_ITER = 3
 
 def get_lipschitz(model, out_dir, model_name, calc_sing=True):  
     # Handle formatting of output directory
