@@ -154,7 +154,7 @@ def add_random_noise(x: torch.Tensor, sigma=0.25):
     '''
     Add gaussian noise to the input
     '''
-    noise_added_to_input = torch.randn(size=x.size()).cuda() * sigma
+    noise_added_to_input = torch.randn(size=x.size()) * sigma
     noisy_x = x + noise_added_to_input
     return noisy_x
 
@@ -208,7 +208,7 @@ def instafilter(filter_processor):
         res_list = []
         n, h, w, c = x.shape
         for i in range(n):
-            res_list.append(filter_processor(x[i]))
+            res_list.append(filter_processor(x[i][:,:,::-1])[:,:,::-1])
         return np.stack(res_list)
     return filter_image
 
