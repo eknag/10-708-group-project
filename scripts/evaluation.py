@@ -4,6 +4,7 @@ from pythae.models import *
 from pythae.models.crvae.crvae_model import CRVAE
 from pythae.samplers import *
 from pythae.models import DVAE
+from pythae.data.datasets import BaseDataset
 from torchvision import datasets
 from torchvision.datasets.vision import VisionDataset
 import torchvision
@@ -105,9 +106,13 @@ def evaluate(
         # if isinstance(dataset[0], tuple):
         #     # Strip class off of tuple and convert data from PIL.Image.Image to Tensor
         #     convert_tensor = transforms.ToTensor()
-        #     dataset = [{"data":convert_tensor(d[0])} for d in dataset]
+        #     data = torch.Tensor([convert_tensor(d[0]) for d in dataset])
+        #     labels = torch.Tensor([d[1] for d in dataset])
+        #     dataset = BaseDataset(data=data, labels=labels)
         # loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
-        # K = FIM(model=model, loader=loader, representation=PMatDiag, n_output=10)   
+        # def function(*d):
+        #     return model(d[0].to("cuda" if torch.cuda.is_available() else "cpu"))
+        # K = FIM(model=model, loader=loader, representation=PMatDiag, n_output=10, function=function)   
         # print(model_name, " (", dataset_name, "): Fischer Inf. Mx: ", K)
         # return
 
