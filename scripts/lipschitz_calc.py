@@ -122,7 +122,14 @@ def model_operations(model, source_dir, dest_dir, model_name):
     print('Lipschitz spectral: {}'.format(lip_spectral))
     print('Lipschitz approximation: {}'.format(lip))
 
-    #TODO(as) store lipschitz to file
+    # Store lipschitz and spectral to file
+    with open(dest_dir + model_name + ".txt", "w") as fd:
+        fd.write("Spectral: ")
+        fd.write(str(lip_spectral.item()))
+        fd.write("\nLipschitz: ")
+        if isinstance(lip, torch.Tensor):
+            lip = lip.item()
+        fd.write(str(lip))
 
     return lip_spectral, lip
 
