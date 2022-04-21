@@ -228,6 +228,8 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
         V.cuda()
 
     M = torch.mm(U, V)
+    if use_cuda:
+        M.cuda()
     current_spec = sp.linalg.norm(M, 2)
     stop_criterion = False
     it = 0
@@ -242,11 +244,15 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
             change = 1 - sigma[i] # if 1 then 0, if 0 then 1
             m_change = torch.ger(U[:, i], V[i, :])
             tmpM = M + (2 * change - 1) * m_change
+            if use_cuda:
+                tmpM.cuda()
             spec = sp.linalg.norm(tmpM, 2)
             if current_spec < spec:
                 highest_idx = i
                 current_spec = spec
                 M = tmpM
+                if use_cuda:
+                    M.cuda()
                 n_changes += 1
                 if change > 0.5:
                     n_changes_p += 1

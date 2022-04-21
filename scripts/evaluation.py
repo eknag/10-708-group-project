@@ -20,6 +20,12 @@ from matplotlib import pyplot as plt
 
 from lipschitz_calc import get_lipschitz
 
+from torch.utils.data import DataLoader
+from nngeometry.generator import Jacobian
+from nngeometry.object import PMatDiag
+from nngeometry.metrics import FIM
+from torchvision import transforms
+
 
 ENCODER_NAME = "_encoder"
 DECODER_NAME = "_decoder"
@@ -85,9 +91,31 @@ def evaluate(
     model.eval()
 
     if lipschitz:
-        spectral, lip = get_lipschitz(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
+        # # Curvature estimation
+        # def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
+        #     if dataset_name == "MNIST":
+        #         return datasets.MNIST(root=dataset_dir, train=True, download=True)
+        #     elif dataset_name == "FashionMNIST":
+        #         return datasets.FashionMNIST(root=dataset_dir, train=True, download=True)
+        #     elif dataset_name == "CIFAR10":
+        #         return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
+        #     elif dataset_name == "CELEBA":
+        #         return datasets.CelebA(root=dataset_dir, train=True, download=True)
+        # dataset = get_dataset(dataset_name, dataset_dir)
+        # if isinstance(dataset[0], tuple):
+        #     # Strip class off of tuple and convert data from PIL.Image.Image to Tensor
+        #     convert_tensor = transforms.ToTensor()
+        #     dataset = [{"data":convert_tensor(d[0])} for d in dataset]
+        # loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+        # K = FIM(model=model, loader=loader, representation=PMatDiag, n_output=10)   
+        # print(model_name, " (", dataset_name, "): Fischer Inf. Mx: ", K)
+        # return
+
+
+        # Calculate Lipschitz constants for encoder and decoder networks
+        spectral, lip = get_lipschitz(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME, calc_sing=False)
         print("Encoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
-        spectral, lip = get_lipschitz(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
+        spectral, lip = get_lipschitz(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME, calc_sing=False)
         print("Decoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
         return
 

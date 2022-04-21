@@ -3,6 +3,7 @@ from copy import deepcopy
 import math
 import torch
 import torchvision
+import os
 
 import numpy as np
 from collections import Counter
@@ -14,8 +15,11 @@ from seqlip import optim_nn_pca_greedy
 
 from experiments.model_get_sv import compute_module_input_sizes, execute_through_model, save_singular, spec_mnist
 
+LIP_OUT_SUBDIR = "lipschitz"
+
 # Set to 200 in the original repo, but they train 500 for some reason
 n_sv = 200
+OPTIM_ITER = 10
 
 def get_lipschitz(model, out_dir, model_name, calc_sing=True):  
     # Handle formatting of output directory
@@ -44,9 +48,12 @@ def get_lipschitz(model, out_dir, model_name, calc_sing=True):
         # Store singular values in files
         save_singular(model, out_dir, model_name)
 
-    # Taken from experiments/model.py
-    # return model_operations(model, out_dir)
-    # TODO(as) just calculate singular values for now
+    if not calc_sing:
+        lipschitz_output_dir = os.path.join(out_dir, LIP_OUT_SUBDIR)
+        os.makedirs(lipschitz_output_dir, exist_ok=True)
+        
+        # Taken from experiments/model.py
+        return model_operations(model, lipschitz_output_dir, model_name)
     return -1, -1
 
 
@@ -72,63 +79,81 @@ def model_operations(model, dest_dir, model_name):
     # TODO(as) need to add indexing here to handle nested layers (see save_singular)
     relevant_layer_cnt = 0
     for layer in model.layers:
-        if is_convolution_or_linear(layer):
+        if "Linear" in layer._get_name():
             relevant_layer_cnt += 1
+        else:
+            for idx in range(len(layer)):
+                if is_convolution_or_linear(layer[idx]):
+                    relevant_layer_cnt += 1
 
     # Indices of convolutions and linear layers
     # TODO(as) need to add indexing here to handle nested layers (see save_singular)
     layer_names = Counter()
     conv_lin_idx = 0
+    print("Calculating Lipschitz constant for ", model_name)
     for layer in model.layers:
-        if not is_convolution_or_linear(layer):
-            continue
+        if "Linear" in layer._get_name():
+            # Generate file name
+            layer_name  = layer._get_name() + "_" + str(layer_names[layer._get_name()])
+            layer_names[layer._get_name()] += 1
+            output_name = dest_dir + model_name + "_" + layer_name
 
-        print('Dealing with {}'.format(layer._get_name()))
-
-        # Generate file name
-        layer_name  = layer._get_name() + "_" + str(layer_names[layer._get_name()])
-        layer_names[layer._get_name()] += 1
-        output_name = dest_dir + model_name + "_" + layer_name
-
-        # Load from file
-        U = torch.load(output_name + "_left_singular")
-        U = torch.cat(U[:n_sv], dim=0).view(n_sv, -1)
-        su = torch.load(output_name + "_spectral")
-        su = su[:n_sv]
-
-        V = torch.load(output_name + "_right_singular")
-        V = torch.cat(V[:n_sv], dim=0).view(n_sv, -1)
-        sv = torch.load(output_name + "_spectral")
-        sv = sv[:n_sv]
-        print('Ratio layer i  : {:.4f}'.format(float(su[0] / su[-1])))
-        print('Ratio layer i+1: {:.4f}'.format(float(sv[0] / sv[-1]))) 
-        U, V = U.cpu(), V.cpu()               
-
-        # Set up
-        if conv_lin_idx == 0:
-            sigmau = torch.diag(torch.Tensor(su))
+            # Process layer
+            lip_spectral, lip = layer_processing(layer, output_name, relevant_layer_cnt, conv_lin_idx)
+            conv_lin_idx += 1
         else:
-            sigmau = torch.diag(torch.sqrt(torch.Tensor(su)))
+            for idx in range(len(layer)):
+                if is_convolution_or_linear(layer):
+                    # Generate file name
+                    layer_name  = layer._get_name() + "_" + str(layer_names[layer._get_name()])
+                    layer_names[layer._get_name()] += 1
+                    output_name = dest_dir + model_name + "_" + layer_name
 
-        if conv_lin_idx == relevant_layer_cnt - 1:
-            sigmav = torch.diag(torch.Tensor(sv))
-        else:
-            sigmav = torch.diag(torch.sqrt(torch.Tensor(sv)))
-
-        expected = sigmau[0,0] * sigmav[0,0]
-        print('Expected: {}'.format(expected))
-
-        lip_spectral *= expected
-
-        # Calculate approximation
-        curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=torch.cuda.is_available())
-        print('Approximation: {}'.format(curr))
-        lip *= float(curr)
-        conv_lin_idx += 1
-
+                    # Process layer
+                    lip_spectral, lip = layer_processing(layer, output_name, relevant_layer_cnt, conv_lin_idx)
+                    conv_lin_idx += 1
 
     print('Lipschitz spectral: {}'.format(lip_spectral))
     print('Lipschitz approximation: {}'.format(lip))
     return lip_spectral, lip
 
+
+
+def layer_processing(layer, output_name, relevant_layer_cnt, conv_lin_idx):
+    # Load from file
+    print('\tDealing with {}'.format(layer._get_name()))
+    U = torch.load(output_name + "_left_singular")
+    U = torch.cat(U[:n_sv], dim=0).view(n_sv, -1)
+    su = torch.load(output_name + "_spectral")
+    su = su[:n_sv]
+
+    V = torch.load(output_name + "_right_singular")
+    V = torch.cat(V[:n_sv], dim=0).view(n_sv, -1)
+    sv = torch.load(output_name + "_spectral")
+    sv = sv[:n_sv]
+    #print('Ratio layer i  : {:.4f}'.format(float(su[0] / su[-1])))
+    #print('Ratio layer i+1: {:.4f}'.format(float(sv[0] / sv[-1]))) 
+    U, V = U.cpu(), V.cpu()               
+
+    # Set up
+    if conv_lin_idx == 0:
+        sigmau = torch.diag(torch.Tensor(su))
+    else:
+        sigmau = torch.diag(torch.sqrt(torch.Tensor(su)))
+
+    if conv_lin_idx == relevant_layer_cnt - 1:
+        sigmav = torch.diag(torch.Tensor(sv))
+    else:
+        sigmav = torch.diag(torch.sqrt(torch.Tensor(sv)))
+
+    expected = sigmau[0,0] * sigmav[0,0]
+    print('\t    Expected: {}'.format(expected))
+
+    lip_spectral *= expected
+
+    # Calculate approximation
+    curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=torch.cuda.is_available(), max_iteration=OPTIM_ITER)
+    print('\t    Approximation: {}'.format(curr))
+    lip *= float(curr)
+    return lip_spectral, lip
 
