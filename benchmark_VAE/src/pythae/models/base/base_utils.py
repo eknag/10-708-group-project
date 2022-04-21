@@ -155,6 +155,8 @@ def add_random_noise(x: torch.Tensor, sigma=0.25):
     Add gaussian noise to the input
     '''
     noise_added_to_input = torch.randn(size=x.size()) * sigma
+    if x.is_cuda:
+        noise_added_to_input = noise_added_to_input.cuda()
     noisy_x = x + noise_added_to_input
     return noisy_x
 
