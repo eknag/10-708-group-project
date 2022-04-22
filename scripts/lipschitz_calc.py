@@ -158,7 +158,10 @@ def layer_processing(lip_spectral, lip, layer, output_name, relevant_layer_cnt, 
     sv = sv[:n_sv]
     #print('Ratio layer i  : {:.4f}'.format(float(su[0] / su[-1])))
     #print('Ratio layer i+1: {:.4f}'.format(float(sv[0] / sv[-1]))) 
-    #U, V = U.cpu(), V.cpu()               
+    if use_cuda:
+        U.cuda()
+        V.cuda()
+
 
     # Set up
     if conv_lin_idx == 0:
