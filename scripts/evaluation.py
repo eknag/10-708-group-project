@@ -95,6 +95,9 @@ def evaluate(
         # Calculate singular values for encoder and decoder networks
         spectral, lip = calc_singular_val(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
         spectral, lip = calc_singular_val(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
+        if not lipschitz:
+            # Allow singular values and Lipschitz to be calculated together
+            return
     if lipschitz:
         # Calculate Lipschitz constants for encoder and decoder networks.  Note: this reads singular value files
         # from output_dir and stores Lipschitz constants in output_dir/LIP_OUT_SUBDIR (defined in lipschitz_calc.py)
@@ -102,6 +105,7 @@ def evaluate(
         print("Encoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
         spectral, lip = get_lipschitz(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
         print("Decoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
+        return
     if curve_est:
         # Curvature estimation
         def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
