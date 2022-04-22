@@ -77,7 +77,9 @@ def evaluate(
     output_dir: str,
     model_dir: str,
     dataset_dir: str,
-    lipschitz: bool
+    calc_sing_val: bool,
+    lipschitz: bool,
+    curve_est: bool,
 ) -> dict[str, float]:
 
     MODEL = get_model(model_name)
@@ -91,42 +93,45 @@ def evaluate(
     model: VAE = MODEL.load_from_folder(model_file)
     model.eval()
 
+    if calc_sing_val:
+        # Calculate singular values for encoder and decoder networks
+        spectral, lip = calc_sing_val(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
+        spectral, lip = calc_sing_val(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
     if lipschitz:
-        # # Curvature estimation
-        # def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
-        #     if dataset_name == "MNIST":
-        #         return datasets.MNIST(root=dataset_dir, train=True, download=True)
-        #     elif dataset_name == "FashionMNIST":
-        #         return datasets.FashionMNIST(root=dataset_dir, train=True, download=True)
-        #     elif dataset_name == "CIFAR10":
-        #         return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
-        #     elif dataset_name == "CELEBA":
-        #         return datasets.CelebA(root=dataset_dir, train=True, download=True)
-        # in_dataset = get_dataset(dataset_name, dataset_dir)
-        # convert_tensor = transforms.ToTensor()
-        # dataset = []
-        # for d in in_dataset:
-        #     data = convert_tensor(d[0])
-        #     dataset.append((data.view(1, *data.shape), d[1]))
-
-        # loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
-        # def encoder_function(*dataset):
-        #     # Run all samples in dataset through the model and return a Tensor of their embeddings
-        #     out = []
-        #     for i in range(len(dataset[0])):
-        #         out.append(model.encoder(dataset[0][i])['embedding'])
-        #     return torch.stack(out, dim=0)
-
-        # K = FIM(model=model.encoder, loader=loader, representation=PMatDiag, n_output=16, function=encoder_function)   
-        # print(model_name, " (", dataset_name, ") Encoder: Fischer Inf. Mx: ", K)
-        # return
-
-
-        # Calculate Lipschitz constants for encoder and decoder networks
-        spectral, lip = get_lipschitz(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME, calc_sing=False)
+        # Calculate Lipschitz constants for encoder and decoder networks.  Note: this reads singular value files
+        # from output_dir and stores Lipschitz constants in output_dir/LIP_OUT_SUBDIR (defined in lipschitz_calc.py)
+        spectral, lip = get_lipschitz(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
         print("Encoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
-        spectral, lip = get_lipschitz(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME, calc_sing=False)
+        spectral, lip = get_lipschitz(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
         print("Decoder network lipschitz constant: ", lip, " (spectral norm: " ,  spectral,  ")")
+    if curve_est:
+        # Curvature estimation
+        def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
+            if dataset_name == "MNIST":
+                return datasets.MNIST(root=dataset_dir, train=True, download=True)
+            elif dataset_name == "FashionMNIST":
+                return datasets.FashionMNIST(root=dataset_dir, train=True, download=True)
+            elif dataset_name == "CIFAR10":
+                return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
+            elif dataset_name == "CELEBA":
+                return datasets.CelebA(root=dataset_dir, train=True, download=True)
+        in_dataset = get_dataset(dataset_name, dataset_dir)
+        convert_tensor = transforms.ToTensor()
+        dataset = []
+        for d in in_dataset:
+            data = convert_tensor(d[0])
+            dataset.append((data.view(1, *data.shape), d[1]))
+
+        loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+        def encoder_function(*dataset):
+            # Run all samples in dataset through the model and return a Tensor of their embeddings
+            out = []
+            for i in range(len(dataset[0])):
+                out.append(model.encoder(dataset[0][i])['embedding'])
+            return torch.stack(out, dim=0)
+
+        K = FIM(model=model.encoder, loader=loader, representation=PMatDiag, n_output=16, function=encoder_function)   
+        print(model_name, " (", dataset_name, ") Encoder: Fischer Inf. Mx: ", K)
         return
 
     SAMPLER = get_sampler(sampler_name)
@@ -198,6 +203,9 @@ def main():
     output_dir = config.output_dir
     model_dir = config.model_dir
     dataset_dir = config.dataset_dir
+    calc_sing_val = config.calc_sing_val
+    lipschitz = config.lipschitz
+    curve_est = config.curve_est
     performances = {}
     for dataset_name in config.datasets:
         dataset_performance = {}
@@ -212,8 +220,9 @@ def main():
                 output_dir,
                 model_dir,
                 dataset_dir,
-                # TODO(as) make this a command line flag
-                lipschitz=True
+                calc_sing_val,
+                lipschitz,
+                curve_est
             )
             dataset_performance[model_name] = results
         performances[dataset_name] = dataset_performance

@@ -50,7 +50,6 @@ def layer_write_singular(layer, dest_dir, model_name, layer_names):
     return layer_names
 
 def load_singular(model, dest_dir, model_name):
-    # TODO(as) need to add indexing here to handle nested layers (see save_singular)
     layer_names = Counter()
     for layer in model.layers:
         layer_name  = layer._get_name() + "_" + str(layer_names[layer._get_name()])

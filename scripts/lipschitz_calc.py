@@ -21,43 +21,41 @@ LIP_OUT_SUBDIR = "lipschitz"
 n_sv = 200
 OPTIM_ITER = 3
 
-def get_lipschitz(model, out_dir, model_name, calc_sing=True):  
+
+def calc_singular_val(model, out_dir, model_name):
     # Handle formatting of output directory
     if out_dir[-1] != '/':
         out_dir += '/'
 
-    if calc_sing:
-        # Taken from experiments/model_get_sv.py.  Assumes eval() has already been run on the model.
-        for p in model.parameters():
-            p.requires_grad = False
+    # Taken from experiments/model_get_sv.py.  Assumes eval() has already been run on the model.
+    for p in model.parameters():
+        p.requires_grad = False
 
-        # Stores largest singular values inside the model itself
-        if "encoder" in model_name:
-            input_size = model.input_dim
-        else:
-            # decoder input is a vector
-            input_size = (1, 1, 1, model.layers[0].in_features)
-        if len(input_size) == 3:
-            input_size = [1, *input_size]
-        elif len(input_size) != 4:
-            print("ERROR: invalid input image size")
-            return -1, -1 
-        compute_module_input_sizes(model, input_size)
-        execute_through_model(spec_mnist, model)
+    # Stores largest singular values inside the model itself
+    if "encoder" in model_name:
+        input_size = model.input_dim
+    else:
+        # decoder input is a vector
+        input_size = (1, 1, 1, model.layers[0].in_features)
+    if len(input_size) == 3:
+        input_size = [1, *input_size]
+    elif len(input_size) != 4:
+        print("ERROR: invalid input image size")
+    compute_module_input_sizes(model, input_size)
+    execute_through_model(spec_mnist, model)
+    
+    # Store singular values in files
+    save_singular(model, out_dir, model_name)
+
+def get_lipschitz(model, out_dir, model_name):  
+    # Handle formatting of output directory
+    if out_dir[-1] != '/':
+        out_dir += '/'
+    lipschitz_output_dir = os.path.join(out_dir, LIP_OUT_SUBDIR)
+    os.makedirs(lipschitz_output_dir, exist_ok=True)
         
-        # Store singular values in files
-        save_singular(model, out_dir, model_name)
-
-    if not calc_sing:
-        lipschitz_output_dir = os.path.join(out_dir, LIP_OUT_SUBDIR)
-        os.makedirs(lipschitz_output_dir, exist_ok=True)
-        
-        # Taken from experiments/model.py
-        return model_operations(model, out_dir, lipschitz_output_dir, model_name)
-    return -1, -1
-
-
-
+    # Taken from experiments/model.py
+    return model_operations(model, out_dir, lipschitz_output_dir, model_name)
 
 
 def model_operations(model, source_dir, dest_dir, model_name):
@@ -82,7 +80,6 @@ def model_operations(model, source_dir, dest_dir, model_name):
     lip_spectral = 1
 
     # Determine number of convolution/linear layers
-    # TODO(as) need to add indexing here to handle nested layers (see save_singular)
     relevant_layer_cnt = 0
     for layer in model.layers:
         if "Linear" in layer._get_name():
@@ -99,7 +96,6 @@ def model_operations(model, source_dir, dest_dir, model_name):
         source_dir += '/'
 
     # Indices of convolutions and linear layers
-    # TODO(as) need to add indexing here to handle nested layers (see save_singular)
     layer_names = Counter()
     conv_lin_idx = 0
     print("Calculating Lipschitz constant for ", model_name)
