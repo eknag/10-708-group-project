@@ -72,8 +72,6 @@ class BaseAE(nn.Module):
 
         self.device = None
 
-        self.unique_name = None
-
     def forward(self, inputs: BaseDataset, **kwargs) -> ModelOutput:
         """Main forward pass outputing the VAE outputs
         This function should output a :class:`~pythae.models.base.base_utils.ModelOutput` instance 
