@@ -5,6 +5,7 @@ import numpy as np
 import numpy.random as rd
 import scipy as sp
 from scipy.optimize import minimize
+from sklearn.decomposition import TruncatedSVD
 
 import torch
 
@@ -230,8 +231,11 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
     M = torch.mm(U, V)
     if use_cuda:
         M.cuda()
-    current_spec = torch.linalg.norm(M, ord=2) # sp.linalg.norm(M, 2)
-    foo = torch.linalg.svdvals(M)
+    #current_spec = torch.linalg.norm(M, ord=2) # sp.linalg.norm(M, 2)
+    #current_spec = torch.linalg.svdvals(M)[0]
+    svd = TruncatedSVD(n_components=1, n_iter=10)
+    svd.fit(M)
+    current_spec = svd.singular_values_[0]
     stop_criterion = False
     it = 0
     while not stop_criterion:
@@ -251,8 +255,10 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
             tmpM = M + (2 * change - 1) * torch.outer(U_helper, V_helper)
             if use_cuda:
                 tmpM.cuda()
-            spec = torch.linalg.norm(tmpM, ord=2) #sp.linalg.norm(tmpM, 2)
-            foo = torch.linalg.svdvals(M)
+            # spec = torch.linalg.norm(tmpM, ord=2) #sp.linalg.norm(tmpM, 2)
+            #spec = torch.linalg.svdvals(M)[0]
+            svd.fit(M)
+            spec = svd.singular_values_[0]
             if current_spec < spec:
                 highest_idx = i
                 current_spec = spec
