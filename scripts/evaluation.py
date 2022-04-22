@@ -93,8 +93,8 @@ def evaluate(
 
     if calc_sing:
         # Calculate singular values for encoder and decoder networks
-        spectral, lip = calc_singular_val(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
-        spectral, lip = calc_singular_val(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
+        calc_singular_val(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
+        calc_singular_val(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
         if not lipschitz:
             # Allow singular values and Lipschitz to be calculated together
             return
