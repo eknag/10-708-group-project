@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.autograd as autograd
 from torch.autograd import Variable
-from max_eigenvalue import max_eigenvalue, generic_power_method
+from lipschitz.max_eigenvalue import max_eigenvalue, generic_power_method
 
 
 def compute_module_input_sizes(model, input_size):

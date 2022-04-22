@@ -17,7 +17,7 @@ from PIL import Image
 import numpy as np
 from matplotlib import pyplot as plt
 
-from lipschitz.lipschitz_calc import get_lipschitz
+from lipschitz.lipschitz_calc import get_lipschitz, calc_singular_val
 
 from torch.utils.data import DataLoader
 from nngeometry.generator import Jacobian
@@ -75,7 +75,7 @@ def evaluate(
     output_dir: str,
     model_dir: str,
     dataset_dir: str,
-    calc_sing_val: bool,
+    calc_sing: bool,
     lipschitz: bool,
     curve_est: bool,
 ) -> dict[str, float]:
@@ -91,10 +91,10 @@ def evaluate(
     model: VAE = MODEL.load_from_folder(model_file)
     model.eval()
 
-    if calc_sing_val:
+    if calc_sing:
         # Calculate singular values for encoder and decoder networks
-        spectral, lip = calc_sing_val(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
-        spectral, lip = calc_sing_val(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
+        spectral, lip = calc_singular_val(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
+        spectral, lip = calc_singular_val(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
     if lipschitz:
         # Calculate Lipschitz constants for encoder and decoder networks.  Note: this reads singular value files
         # from output_dir and stores Lipschitz constants in output_dir/LIP_OUT_SUBDIR (defined in lipschitz_calc.py)
@@ -201,7 +201,7 @@ def main():
     output_dir = config.output_dir
     model_dir = config.model_dir
     dataset_dir = config.dataset_dir
-    calc_sing_val = config.calc_sing_val
+    calc_sing = config.calc_singular
     lipschitz = config.lipschitz
     curve_est = config.curve_est
     performances = {}
@@ -218,7 +218,7 @@ def main():
                 output_dir,
                 model_dir,
                 dataset_dir,
-                calc_sing_val,
+                calc_sing,
                 lipschitz,
                 curve_est
             )

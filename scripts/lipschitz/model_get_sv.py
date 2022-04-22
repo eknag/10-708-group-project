@@ -4,8 +4,8 @@ import torch
 import numpy as np
 from collections import Counter
 
-from lipschitz_utils import *
-from max_eigenvalue import k_generic_power_method
+from lipschitz.lipschitz_utils import *
+from lipschitz.max_eigenvalue import k_generic_power_method
 
 n_sv = 200
 
