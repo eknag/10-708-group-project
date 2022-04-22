@@ -18,8 +18,8 @@ from experiments.model_get_sv import compute_module_input_sizes, execute_through
 LIP_OUT_SUBDIR = "lipschitz"
 
 # Set to 200 in the original repo, but they train 500 for some reason
-n_sv = 200
-OPTIM_ITER = 3
+n_sv = 2
+OPTIM_ITER = 1
 
 def get_lipschitz(model, out_dir, model_name, calc_sing=True):  
     # Handle formatting of output directory
@@ -66,8 +66,14 @@ def model_operations(model, source_dir, dest_dir, model_name):
 
     We perform the 100-optimization implemented in optim_nn_pca_greedy
     """
+    use_cuda = torch.cuda.is_available()
+    if use_cuda:
+        model.cuda()
+
     for p in model.parameters():
         p.requires_grad = False
+        if use_cuda:
+            p.cuda()
 
     # No longer needed since model already has sizes baked in
     # compute_module_input_sizes(model, [1, 1, 28, 28])
@@ -138,19 +144,21 @@ def model_operations(model, source_dir, dest_dir, model_name):
 def layer_processing(lip_spectral, lip, layer, output_name, relevant_layer_cnt, conv_lin_idx):
     # Load from file
     print('\tDealing with {}'.format(layer._get_name()))
-    U = torch.load(output_name + "_left_singular", map_location="cuda" if torch.cuda.is_available() else "cpu")
+    use_cuda = torch.cuda.is_available()
+    device = "cuda" if use_cuda else "cpu"
+    U = torch.load(output_name + "_left_singular", map_location=device)
     U = adjust_for_nan(U)
     U = torch.cat(U[:n_sv], dim=0).view(n_sv, -1)
-    su = torch.load(output_name + "_spectral", map_location="cuda" if torch.cuda.is_available() else "cpu")
+    su = torch.load(output_name + "_spectral", map_location=device)
     su = su[:n_sv]
 
-    V = torch.load(output_name + "_right_singular", map_location="cuda" if torch.cuda.is_available() else "cpu")
+    V = torch.load(output_name + "_right_singular", map_location=device)
     V = torch.cat(V[:n_sv], dim=0).view(n_sv, -1)
-    sv = torch.load(output_name + "_spectral", map_location="cuda" if torch.cuda.is_available() else "cpu")
+    sv = torch.load(output_name + "_spectral", map_location=device)
     sv = sv[:n_sv]
     #print('Ratio layer i  : {:.4f}'.format(float(su[0] / su[-1])))
     #print('Ratio layer i+1: {:.4f}'.format(float(sv[0] / sv[-1]))) 
-    U, V = U.cpu(), V.cpu()               
+    #U, V = U.cpu(), V.cpu()               
 
     # Set up
     if conv_lin_idx == 0:
@@ -162,6 +170,10 @@ def layer_processing(lip_spectral, lip, layer, output_name, relevant_layer_cnt, 
         sigmav = torch.diag(torch.Tensor(sv))
     else:
         sigmav = torch.diag(torch.sqrt(torch.Tensor(sv)))
+    
+    if use_cuda:
+        sigmau.cuda()
+        sigmav.cuda()
 
     expected = sigmau[0,0] * sigmav[0,0]
     print('\t    Expected: {}'.format(expected))
@@ -169,7 +181,7 @@ def layer_processing(lip_spectral, lip, layer, output_name, relevant_layer_cnt, 
     lip_spectral *= expected
 
     # Calculate approximation
-    curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=torch.cuda.is_available(), max_iteration=OPTIM_ITER)
+    curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=use_cuda, max_iteration=OPTIM_ITER)
     print('\t    Approximation: {}'.format(curr))
     lip *= float(curr)
     return lip_spectral, lip

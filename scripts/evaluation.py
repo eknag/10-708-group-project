@@ -92,29 +92,34 @@ def evaluate(
     model.eval()
 
     if lipschitz:
-        # # Curvature estimation
-        # def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
-        #     if dataset_name == "MNIST":
-        #         return datasets.MNIST(root=dataset_dir, train=True, download=True)
-        #     elif dataset_name == "FashionMNIST":
-        #         return datasets.FashionMNIST(root=dataset_dir, train=True, download=True)
-        #     elif dataset_name == "CIFAR10":
-        #         return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
-        #     elif dataset_name == "CELEBA":
-        #         return datasets.CelebA(root=dataset_dir, train=True, download=True)
-        # dataset = get_dataset(dataset_name, dataset_dir)
-        # if isinstance(dataset[0], tuple):
-        #     # Strip class off of tuple and convert data from PIL.Image.Image to Tensor
-        #     convert_tensor = transforms.ToTensor()
-        #     data = torch.Tensor([convert_tensor(d[0]) for d in dataset])
-        #     labels = torch.Tensor([d[1] for d in dataset])
-        #     dataset = BaseDataset(data=data, labels=labels)
-        # loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
-        # def function(*d):
-        #     return model(d[0].to("cuda" if torch.cuda.is_available() else "cpu"))
-        # K = FIM(model=model, loader=loader, representation=PMatDiag, n_output=10, function=function)   
-        # print(model_name, " (", dataset_name, "): Fischer Inf. Mx: ", K)
-        # return
+        # Curvature estimation
+        def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
+            if dataset_name == "MNIST":
+                return datasets.MNIST(root=dataset_dir, train=True, download=True)
+            elif dataset_name == "FashionMNIST":
+                return datasets.FashionMNIST(root=dataset_dir, train=True, download=True)
+            elif dataset_name == "CIFAR10":
+                return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
+            elif dataset_name == "CELEBA":
+                return datasets.CelebA(root=dataset_dir, train=True, download=True)
+        in_dataset = get_dataset(dataset_name, dataset_dir)
+        convert_tensor = transforms.ToTensor()
+        dataset = []
+        for d in in_dataset:
+            data = convert_tensor(d[0])
+            dataset.append((data.view(1, *data.shape), d[1]))
+
+        loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+        def encoder_function(*dataset):
+            # Run all samples in dataset through the model and return a Tensor of their embeddings
+            out = []
+            for i in range(len(dataset[0])):
+                out.append(model.encoder(dataset[0][i])['embedding'])
+            return torch.stack(out, dim=0)
+
+        K = FIM(model=model.encoder, loader=loader, representation=PMatDiag, n_output=16, function=encoder_function)   
+        print(model_name, " (", dataset_name, ") Encoder: Fischer Inf. Mx: ", K)
+        return
 
 
         # Calculate Lipschitz constants for encoder and decoder networks
