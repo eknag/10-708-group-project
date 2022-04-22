@@ -256,8 +256,8 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
             if use_cuda:
                 tmpM.cuda()
             # spec = torch.linalg.norm(tmpM, ord=2) #sp.linalg.norm(tmpM, 2)
-            #spec = torch.linalg.svdvals(M)[0]
-            svd.fit(M)
+            #spec = torch.linalg.svdvals(tmpM)[0]
+            svd.fit(tmpM)
             spec = svd.singular_values_[0]
             if current_spec < spec:
                 highest_idx = i
