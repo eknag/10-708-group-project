@@ -18,8 +18,8 @@ from experiments.model_get_sv import compute_module_input_sizes, execute_through
 LIP_OUT_SUBDIR = "lipschitz"
 
 # Set to 200 in the original repo, but they train 500 for some reason
-n_sv = 2
-OPTIM_ITER = 1
+n_sv = 200
+OPTIM_ITER = 3
 
 def get_lipschitz(model, out_dir, model_name, calc_sing=True):  
     # Handle formatting of output directory
