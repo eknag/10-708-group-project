@@ -161,6 +161,9 @@ def layer_processing(lip_spectral, lip, layer, output_name, relevant_layer_cnt, 
     if use_cuda:
         U.cuda()
         V.cuda()
+    else:
+        U.cpu()
+        V.cpu()
 
 
     # Set up
@@ -184,7 +187,9 @@ def layer_processing(lip_spectral, lip, layer, output_name, relevant_layer_cnt, 
     lip_spectral *= expected
 
     # Calculate approximation
-    curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=use_cuda, max_iteration=OPTIM_ITER)
+    U = U.t() @ sigmau
+    V = sigmav @ V
+    curr, _ = optim_nn_pca_greedy(U, V, use_cuda=use_cuda, max_iteration=OPTIM_ITER)
     print('\t    Approximation: {}'.format(curr))
     lip *= float(curr)
     return lip_spectral, lip
