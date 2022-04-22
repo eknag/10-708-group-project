@@ -3,8 +3,6 @@ from argparse import ArgumentParser
 from pythae.models import *
 from pythae.models.crvae.crvae_model import CRVAE
 from pythae.samplers import *
-from pythae.models import DVAE
-from pythae.data.datasets import BaseDataset
 from torchvision import datasets
 from torchvision.datasets.vision import VisionDataset
 import torchvision

@@ -1,0 +1,22 @@
+data_dir: "./data"
+
+dataset_name: "CelebA"
+
+model_name: "VAE" 
+
+model_config:
+  latent_dim: 16
+
+trainer_name: "BaseTrainer"
+training_config:
+  output_dir: "./results"
+  learning_rate: 0.001
+  batch_size: 128
+  num_epochs: 100
+  seed: 42
+
+
+
+
+
+  

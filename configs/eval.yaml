@@ -2,9 +2,10 @@ models:
   - "VAE"
   - "BetaVAE"
   - "DVAE"
-model_dir: "/Users/andrewstange/Desktop/CMU/Spring_22/10-708/Project/10-708-project-results/trained_models"   # "/home/everett/data/10-708-project-results/trained_models"
-output_dir: "/Users/andrewstange/Desktop/CMU/Spring_22/10-708/Project/samples" #"/home/everett/data/10-708-project-results/samples"
-dataset_dir: "/home/everett/data"
+  - "CRVAE"
+model_dir: "./results"
+output_dir: "./samples"
+dataset_dir: "./data"
 datasets: 
   - "CIFAR10"
   - "MNIST"

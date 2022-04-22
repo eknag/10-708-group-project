@@ -14,11 +14,12 @@ from torchvision import transforms
 import torch.nn.functional as F
 import random
 
+
 class CRVAE(BaseAE):
     """Vanilla Variational Autoencoder model.
-    
+
     Args:
-        model_config(VAEConfig): The Variational Autoencoder configuration seting the main 
+        model_config(CRVAEConfig): The Variational Autoencoder configuration seting the main
         parameters of the model
         encoder (BaseEncoder): An instance of BaseEncoder (inheriting from `torch.nn.Module` which
             plays the role of encoder. This argument allows you to use your own neural networks
@@ -32,69 +33,6 @@ class CRVAE(BaseAE):
         For high dimensional data we advice you to provide you own network architectures. With the
         provided MLP you may end up with a ``MemoryError``.
     """
-
-    SimpleAugmentation = transforms.Compose([
-        transforms.RandomAffine(degrees=15, translate=(0.05,0.05), scale=(0.9,1.1)),
-    ])
-
-
-    LargeAugmentation = transforms.Compose([
-        transforms.RandomAffine(degrees=30, translate=(0.1,0.1), scale=(0.75,1.25)),
-    ])
-
-
-    SimpleVerticalFlipAugmentation = transforms.Compose([
-        transforms.RandomVerticalFlip(),
-        transforms.RandomAffine(degrees=15, translate=(0.05,0.05), scale=(0.9,1.1)),
-    ])
-
-
-    LargeVerticalFlipAugmentation = transforms.Compose([
-        transforms.RandomVerticalFlip(),
-        transforms.RandomAffine(degrees=30, translate=(0.1,0.1), scale=(0.75,1.25)),
-    ])
-
-
-    SimpleJitterAugmentation = transforms.Compose([
-        transforms.RandomAffine(degrees=15, translate=(0.05,0.05), scale=(0.9,1.1)),
-        transforms.ColorJitter(brightness=0.2, hue=0.2, contrast=0.5),
-    ])
-
-
-    LargeJitterAugmentation = transforms.Compose([
-        transforms.RandomAffine(degrees=30, translate=(0.1,0.1), scale=(0.75,1.25)),
-        transforms.ColorJitter(brightness=0.2, hue=0.2, contrast=0.5),
-    ])
-
-
-    SimpleVerticalFlipJitterAugmentation = transforms.Compose([
-        transforms.RandomVerticalFlip(),
-        transforms.RandomAffine(degrees=15, translate=(0.05,0.05), scale=(0.9,1.1)),
-        transforms.ColorJitter(brightness=0.2, hue=0.2, contrast=0.5),
-    ])
-
-
-    LargeVerticalFlipJitterAugmentation = transforms.Compose([
-        transforms.RandomVerticalFlip(),
-        transforms.RandomAffine(degrees=30, translate=(0.1,0.1), scale=(0.75,1.25)),
-        transforms.ColorJitter(brightness=0.2, hue=0.2, contrast=0.5),
-    ])
-
-    IMAGENET_MEAN = [0.485, 0.456, 0.406] 
-    IMAGENET_STD = [0.229, 0.224, 0.225]
-
-    augmentations = {
-        'simple': SimpleAugmentation,
-        'large': LargeAugmentation,
-        'simple_vertical_flip': SimpleVerticalFlipAugmentation,
-        'large_vertical_flip': LargeVerticalFlipAugmentation,
-        'simple_jitter': SimpleJitterAugmentation,
-        'large_jitter': LargeJitterAugmentation,
-        'simple_vertical_flip_jitter': SimpleVerticalFlipJitterAugmentation,
-        'large_vertical_flip_jitter': LargeVerticalFlipJitterAugmentation,
-    }
-
-    augmentation_names = ['simple', 'large', 'simple_vertical_flip', 'large_vertical_flip', 'simple_jitter', 'large_jitter', 'simple_vertical_flip_jitter', 'large_vertical_flip_jitter']
 
     def __init__(
         self,
@@ -124,10 +62,10 @@ class CRVAE(BaseAE):
 
         self.set_encoder(encoder)
 
-        # To be moved to config file
-        self.gamma=1e-3
-        self.beta_1=1
-        self.beta_2=1
+        self.aug_type = model_config.aug_type
+        self.gamma = model_config.gamma
+        self.beta_1 = model_config.beta_1
+        self.beta_2 = model_config.beta_2
 
     def forward(self, inputs: BaseDataset, **kwargs):
         """
@@ -140,30 +78,35 @@ class CRVAE(BaseAE):
 
         x = inputs["data"]
         n = x.size(0)
-        tx = self.apply_transform(x)
-     #   x = torch.cat([x, tx], dim=0)
+        tx = self.apply_transform(x, self.aug_type)
+        #   x = torch.cat([x, tx], dim=0)
 
         encoder_output_x = self.encoder(x)
         encoder_output_tx = self.encoder(tx)
 
         mu_x, log_var_x = encoder_output_x.embedding, encoder_output_x.log_covariance
-        mu_tx, log_var_tx = encoder_output_tx.embedding, encoder_output_tx.log_covariance
+        mu_tx, log_var_tx = (
+            encoder_output_tx.embedding,
+            encoder_output_tx.log_covariance,
+        )
 
         std_x = torch.exp(0.5 * log_var_x)
         z_x, eps_x = self._sample_gauss(mu_x, std_x)
         recon_x = self.decoder(z_x)["reconstruction"]
 
-     #   mu_x, mu_tx = mu_x[:n], mu_x[n:]
-     #   log_var_x, log_var_tx = log_var_x[:n], log_var_x[n:]
-     #   z_x, z_tx = z_x[:n], z_x[n:]
-     #   x, tx = x[:n], x[n:]
-     #   recon_x, recon_tx = recon_x[:n], recon_x[n:]
+        #   mu_x, mu_tx = mu_x[:n], mu_x[n:]
+        #   log_var_x, log_var_tx = log_var_x[:n], log_var_x[n:]
+        #   z_x, z_tx = z_x[:n], z_x[n:]
+        #   x, tx = x[:n], x[n:]
+        #   recon_x, recon_tx = recon_x[:n], recon_x[n:]
 
         std_tx = torch.exp(0.5 * log_var_tx)
         z_tx, eps_tx = self._sample_gauss(mu_tx, std_tx)
         recon_tx = self.decoder(z_tx)["reconstruction"]
 
-        loss, recon_loss, kld = self.loss_function(recon_x, recon_tx, x, tx, mu_x, mu_tx, log_var_x, log_var_tx, z_x, z_tx)
+        loss, recon_loss, kld = self.loss_function(
+            recon_x, recon_tx, x, tx, mu_x, mu_tx, log_var_x, log_var_tx, z_x, z_tx
+        )
 
         output = ModelOutput(
             reconstruction_loss=recon_loss,
@@ -175,9 +118,15 @@ class CRVAE(BaseAE):
 
         return output
 
-    def loss_function(self, recon_x, recon_tx, x, tx, mu_x, mu_tx, log_var_x, log_var_tx, z_x, z_tx):
-        vae_loss_x, bce_x, kld_x = self._elbo_loss(mu_x, log_var_x, recon_x, x, self.beta_1)
-        vae_loss_tx, bce_tx, kld_tx = self._elbo_loss(mu_tx, log_var_tx, recon_tx, tx, self.beta_2)
+    def loss_function(
+        self, recon_x, recon_tx, x, tx, mu_x, mu_tx, log_var_x, log_var_tx, z_x, z_tx
+    ):
+        vae_loss_x, bce_x, kld_x = self._elbo_loss(
+            mu_x, log_var_x, recon_x, x, self.beta_1
+        )
+        vae_loss_tx, bce_tx, kld_tx = self._elbo_loss(
+            mu_tx, log_var_tx, recon_tx, tx, self.beta_2
+        )
         cr_vae_loss = self._cr_loss(mu_x, log_var_x, mu_tx, log_var_tx, self.gamma)
         return vae_loss_x + vae_loss_tx + cr_vae_loss, bce_x + bce_tx, kld_x + kld_tx
 
@@ -187,24 +136,23 @@ class CRVAE(BaseAE):
             recon_loss = F.mse_loss(
                 recon.reshape(batch_size, -1),
                 original.reshape(batch_size, -1),
-                reduction="none",
-            ).sum(dim=-1)
+                reduction="mean",
+            )
         elif self.model_config.reconstruction_loss == "bce":
             recon_loss = F.binary_cross_entropy(
-                recon.view(batch_size, -1),
-                original.view(batch_size, -1), 
-                reduction="none"
-            ).sum(dim=-1)
+                recon.reshape(batch_size, -1),
+                original.reshape(batch_size, -1),
+                reduction="mean",
+            )
 
         # see Appendix B from VAE paper:
         # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
         # https://arxiv.org/abs/1312.6114
         # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim = -1)
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 
         vae_loss = recon_loss + beta * KLD
-        return vae_loss.mean(dim=0), recon_loss.mean(dim=0), KLD.mean(dim=0)
-
+        return vae_loss, recon_loss, KLD
 
     def _cr_loss(self, mu, logvar, mu_aug, logvar_aug, gamma):
         """
@@ -213,12 +161,18 @@ class CRVAE(BaseAE):
         std_orig = logvar.exp()
         std_aug = logvar_aug.exp()
 
-        cr_loss = 0.5 * torch.sum(2 * torch.log(std_orig / std_aug) - \
-                1 + (std_aug ** 2 + (mu_aug - mu) ** 2) / std_orig ** 2,
-                dim = -1)
+        cr_loss = (
+            0.5
+            * torch.sum(
+                2 * torch.log(std_orig / std_aug)
+                - 1
+                + (std_aug ** 2 + (mu_aug - mu) ** 2) / std_orig ** 2,
+                dim=1,
+            ).mean(dim=0)
+        )
 
         cr_loss *= gamma
-        return cr_loss.mean(dim=0)
+        return cr_loss
 
     def _sample_gauss(self, mu, std):
         # Reparametrization trick
@@ -250,7 +204,7 @@ class CRVAE(BaseAE):
             This function requires the folder to contain:
             - | a ``model_config.json`` and a ``model.pt`` if no custom architectures were provided
             **or**
-                
+
             - | a ``model_config.json``, a ``model.pt`` and a ``encoder.pkl`` (resp.
                 ``decoder.pkl``) if a custom encoder (resp. decoder) was provided
         """
@@ -274,19 +228,3 @@ class CRVAE(BaseAE):
         model.load_state_dict(model_weights)
 
         return model
-
-    def apply_transform(self, raw_images: torch.Tensor, aug_type=None):
-        transform = self.get_augmentation(aug_type)
-        return transform(raw_images)
-    
-    def get_augmentation(self, aug_type=None, normalize=False, mean=None, std=None):
-        if aug_type == None:
-            aug_type = random.choice(self.augmentation_names)
-        augmentation = self.augmentations[aug_type]    
-        if normalize:
-            mean = mean if mean is not None else self.IMAGENET_MEAN
-            std = std if std is not None else self.IMAGENET_STD
-            normalize_aug = transforms.Normalize(mean, std)
-            augmentation.transforms.append(normalize_aug)
-
-        return augmentation

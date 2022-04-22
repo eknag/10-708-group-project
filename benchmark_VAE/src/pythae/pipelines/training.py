@@ -9,7 +9,8 @@ from ..customexception import LoadError
 from ..data.preprocessors import DataProcessor
 from ..models import BaseAE, VAE, VAEConfig
 from ..trainers import *
-
+from torch.utils.data import Dataset
+from pythae.data.datasets import FolderDataset
 from .base_pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
@@ -115,8 +116,8 @@ class TrainingPipeline(Pipeline):
 
     def __call__(
         self,
-        train_data: Union[np.ndarray, torch.Tensor],
-        eval_data: Union[np.ndarray, torch.Tensor] = None,
+        train_data: Union[np.ndarray, torch.Tensor, FolderDataset],
+        eval_data: Union[np.ndarray, torch.Tensor, FolderDataset] = None,
         log_output_dir: str = None,
     ):
         """
@@ -132,9 +133,12 @@ class TrainingPipeline(Pipeline):
                 n_channels x ...). If None, only uses train_fata for training. Default: None.
         """
 
-        logger.info("Preprocessing train data...")
-        train_data = self.data_processor.process_data(train_data)
-        train_dataset = self.data_processor.to_dataset(train_data)
+        if type(train_data) is not FolderDataset:
+            logger.info("Preprocessing train data...")
+            train_data = self.data_processor.process_data(train_data)
+            train_dataset = self.data_processor.to_dataset(train_data)
+        else:
+            train_dataset = train_data
 
         self.train_data = train_data
 
@@ -142,10 +146,12 @@ class TrainingPipeline(Pipeline):
             self._set_default_model(train_data)
 
         if eval_data is not None:
-            logger.info("Preprocessing eval data...\n")
-            eval_data = self.data_processor.process_data(eval_data)
-            eval_dataset = self.data_processor.to_dataset(eval_data)
-
+            if type(eval_data) is not FolderDataset:
+                logger.info("Preprocessing eval data...\n")
+                eval_data = self.data_processor.process_data(eval_data)
+                eval_dataset = self.data_processor.to_dataset(eval_data)
+            else:
+                eval_dataset = eval_data
         else:
             eval_dataset = None
 

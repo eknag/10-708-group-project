@@ -1,0 +1,26 @@
+data_dir: "./data/"
+
+dataset_name: "CIFAR10"
+
+model_name: "CRVAE" 
+
+model_config:
+  latent_dim: 50
+  aug_type: "simple"
+  gamma: 0.1
+  beta_1: 1
+  beta_2: 1
+
+trainer_name: "BaseTrainer"
+training_config:
+  output_dir: "./results"
+  learning_rate: 2.5367e-05 
+  batch_size: 64
+  num_epochs: 50
+  seed: 42
+
+
+
+
+
+  
