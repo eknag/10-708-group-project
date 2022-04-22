@@ -17,7 +17,7 @@ from PIL import Image
 import numpy as np
 from matplotlib import pyplot as plt
 
-from lipschitz_calc import get_lipschitz
+from lipschitz.lipschitz_calc import get_lipschitz
 
 from torch.utils.data import DataLoader
 from nngeometry.generator import Jacobian

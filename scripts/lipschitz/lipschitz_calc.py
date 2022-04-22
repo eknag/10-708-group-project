@@ -13,7 +13,7 @@ from max_eigenvalue import k_generic_power_method
 
 from seqlip import optim_nn_pca_greedy
 
-from experiments.model_get_sv import compute_module_input_sizes, execute_through_model, save_singular, spec_mnist
+from model_get_sv import compute_module_input_sizes, execute_through_model, save_singular, spec_mnist
 
 LIP_OUT_SUBDIR = "lipschitz"
 
