@@ -53,6 +53,9 @@ def get_lipschitz(model, out_dir, model_name):
         out_dir += '/'
     lipschitz_output_dir = os.path.join(out_dir, LIP_OUT_SUBDIR)
     os.makedirs(lipschitz_output_dir, exist_ok=True)
+    
+    if "encoder" in model_name:
+        return -1, -1
         
     # Taken from experiments/model.py
     return model_operations(model, out_dir, lipschitz_output_dir, model_name)
