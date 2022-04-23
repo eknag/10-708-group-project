@@ -98,6 +98,8 @@ class Jacobian:
         return G
 
     def get_covariance_diag(self, examples):
+        from tqdm import tqdm
+
         if self.centering:
             raise NotImplementedError
         # add hooks
@@ -111,7 +113,7 @@ class Jacobian:
         n_parameters = self.layer_collection.numel()
         self.diag_m = torch.zeros((n_parameters,), device=device)
         self.start = 0
-        for d in loader:
+        for d in tqdm(loader):
             inputs = d[0]
             inputs.requires_grad = True
             bs = inputs.size(0)

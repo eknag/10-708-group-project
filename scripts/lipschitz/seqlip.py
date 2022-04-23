@@ -224,15 +224,20 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
 
     sigma = np.ones(n)
 
-    if use_cuda:
-        U.cuda()
-        V.cuda()
+    # if use_cuda:
+    #     U.cuda()
+    #     V.cuda()
 
-    M = torch.mm(U, V)
-    if use_cuda:
-        M.cuda()
+    try:
+        M = torch.mm(U, V)
+        # if use_cuda:
+        #     M.cuda()
+    except Exception as e:
+        print("Exception caught: ", e)
+        print("U shape: ", U.shape)
+        print("V shape: ", V.shape)
+
     #current_spec = torch.linalg.norm(M, ord=2) # sp.linalg.norm(M, 2)
-    #current_spec = torch.linalg.svdvals(M)[0]
     svd = TruncatedSVD(n_components=1, n_iter=10)
     svd.fit(M)
     current_spec = svd.singular_values_[0]
@@ -249,14 +254,13 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
             change = 1 - sigma[i] # if 1 then 0, if 0 then 1
             U_helper = U[:, i]
             V_helper = V[i, :]
-            if use_cuda:
-                U_helper.cuda()
-                V_helper.cuda()
+            # if use_cuda:
+            #     U_helper.cuda()
+            #     V_helper.cuda()
             tmpM = M + (2 * change - 1) * torch.outer(U_helper, V_helper)
             if use_cuda:
                 tmpM.cuda()
             # spec = torch.linalg.norm(tmpM, ord=2) #sp.linalg.norm(tmpM, 2)
-            #spec = torch.linalg.svdvals(tmpM)[0]
             svd.fit(tmpM)
             spec = svd.singular_values_[0]
             if current_spec < spec:

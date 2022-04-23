@@ -8,9 +8,10 @@ from lipschitz.max_eigenvalue import max_eigenvalue, generic_power_method
 def compute_module_input_sizes(model, input_size):
     """ Tag all modules with `input_sizes` attribute
     """
-    def store_input_sizes(self, input, output):
+    def store_input_sizes(self, inp, output):
         # print(self.__class__.__name__, len(input), input[0].shape)
-        self.input_sizes = [x.size() for x in input]
+        self.input_sizes = [x.size() for x in inp]
+        foo = 1
     execute_through_model(store_input_sizes, model, input_size=input_size)
 
 

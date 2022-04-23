@@ -18,8 +18,8 @@ from lipschitz.model_get_sv import compute_module_input_sizes, execute_through_m
 LIP_OUT_SUBDIR = "lipschitz"
 
 # Set to 200 in the original repo, but they train 500 for some reason
-n_sv = 200
-OPTIM_ITER = 3
+n_sv = 100
+OPTIM_ITER = 1
 
 
 def calc_singular_val(model, out_dir, model_name):
@@ -33,6 +33,7 @@ def calc_singular_val(model, out_dir, model_name):
 
     # Stores largest singular values inside the model itself
     if "encoder" in model_name:
+        return
         input_size = model.input_dim
     else:
         # decoder input is a vector
@@ -53,6 +54,9 @@ def get_lipschitz(model, out_dir, model_name):
         out_dir += '/'
     lipschitz_output_dir = os.path.join(out_dir, LIP_OUT_SUBDIR)
     os.makedirs(lipschitz_output_dir, exist_ok=True)
+
+    if "encoder" in model_name:
+        return -1, -1
         
     # Taken from experiments/model.py
     return model_operations(model, out_dir, lipschitz_output_dir, model_name)
@@ -170,7 +174,7 @@ def layer_processing(lip_spectral, lip, layer, output_name, relevant_layer_cnt, 
     lip_spectral *= expected
 
     # Calculate approximation
-    curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=use_cuda, max_iteration=OPTIM_ITER)
+    curr, _ = optim_nn_pca_greedy(U.t() @ sigmau, sigmav @ V, use_cuda=False, max_iteration=OPTIM_ITER)
     print('\t    Approximation: {}'.format(curr))
     lip *= float(curr)
     return lip_spectral, lip

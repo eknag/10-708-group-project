@@ -2,17 +2,17 @@ models:
   - "VAE"
   - "BetaVAE"
   - "DVAE"
-  - "CRVAE"
-model_dir: "./results"
-output_dir: "./samples"
-dataset_dir: "./data"
+model_dir: "/Users/andrewstange/Desktop/CMU/Spring_22/10-708/Project/10-708-project-results/trained_models" 
+output_dir: "/Users/andrewstange/Desktop/CMU/Spring_22/10-708/Project/samples" 
+dataset_dir: "/Users/andrewstange/Desktop/CMU/Spring_22/10-708/Project/datasets"
 datasets: 
   - "CIFAR10"
+  - "MNIST"
 sampler: "NormalSampler"
 metric: "FID"
 num_samples: 10000
 batch_size: 100
 num_workers: 4
 calc_singular: False
-lipschitz: True
-curve_est: False
+lipschitz: False
+curve_est: True

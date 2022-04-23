@@ -93,8 +93,8 @@ def evaluate(
 
     if calc_sing:
         # Calculate singular values for encoder and decoder networks
-        spectral, lip = calc_singular_val(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
-        spectral, lip = calc_singular_val(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
+        calc_singular_val(model.encoder, output_dir, dataset_name +  "_" + model_name + ENCODER_NAME)
+        calc_singular_val(model.decoder, output_dir, dataset_name +  "_" + model_name + DECODER_NAME)
         if not lipschitz:
             # Allow singular values and Lipschitz to be calculated together
             return
@@ -134,6 +134,20 @@ def evaluate(
 
         K = FIM(model=model.encoder, loader=loader, representation=PMatDiag, n_output=16, function=encoder_function)   
         print(model_name, " (", dataset_name, ") Encoder: Fischer Inf. Mx: ", K)
+
+        def decoder_function(*dataset):
+            # Run all samples in dataset through the model and return a Tensor of their embeddings
+            out = []
+            for i in range(len(dataset[0])):
+                out.append(model.encoder(dataset[0][i])['embedding'])
+            return torch.stack(out, dim=0)
+
+        K = FIM(model=model.decoder, loader=loader, representation=PMatDiag, n_output=16, function=decoder_function)   
+        print(model_name, " (", dataset_name, ") Decoder: Fischer Inf. Mx: ", K)
+
+
+        # TODO(as) store results to file
+
         return
 
     SAMPLER = get_sampler(sampler_name)
