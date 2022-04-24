@@ -117,3 +117,5 @@ samples/
 
 # ray tune hyperparam optimization logging
 ray_results/
+
+aws_data

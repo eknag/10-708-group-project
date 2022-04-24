@@ -1,9 +1,6 @@
 models: 
-  - "VAE"
-  - "BetaVAE"
-  - "DVAE"
   - "CRVAE"
-model_dir: "./results"
+model_dir: "./aws_data/crvae_cifar10_all_augmentations/"
 output_dir: "./samples"
 dataset_dir: "./data"
 datasets: 
@@ -14,5 +11,5 @@ num_samples: 10000
 batch_size: 100
 num_workers: 4
 calc_singular: False
-lipschitz: True
+lipschitz: False
 curve_est: False
