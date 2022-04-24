@@ -65,10 +65,29 @@ def get_newest_file(path: str) -> str:
     return os.path.join(path, files[-1])
 
 
+def is_valid_model_folder(folder):
+    print(f"Checking {folder}")
+    required_files = [
+        "decoder.pkl",
+        "encoder.pkl",
+        "model_config.json",
+        "model.pt",
+        "training_config.json",
+    ]
+    result = all(
+        [os.path.exists(os.path.join(folder, "final_model", f)) for f in required_files]
+    )
+    if not result:
+        print(f"{folder} is not a valid model folder, skipping")
+    return result
+
+
 def get_all_files(path: str) -> list:
     files = os.listdir(path)
-    files.sort(key=lambda x: os.path.getmtime(os.path.join(path, x)))
-    return [os.path.join(path, f) for f in files]
+    files = [os.path.join(path, f) for f in files]
+    files = [file for file in files if is_valid_model_folder(file)]
+    files.sort(key=lambda x: os.path.getmtime(x))
+    return files
 
 
 def evaluate(
@@ -242,14 +261,15 @@ def main():
     for dataset_name in config.datasets:
         dataset_performance = {}
         for model_name in config.models:
-            model_dir = os.path.join(model_dir, f"{dataset_name}_{model_name}")
-            if not os.path.exists(model_dir):
+            data_model_dir = os.path.join(model_dir, f"{dataset_name}_{model_name}")
+            if not os.path.exists(data_model_dir):
                 raise FileNotFoundError(
-                    f"Model directory {model_dir} not found, make sure to train the model first."
+                    f"Model directory {data_model_dir} not found, make sure to train the model first."
                 )
 
             model_files = [
-                os.path.join(file, "final_model") for file in get_all_files(model_dir)
+                os.path.join(file, "final_model")
+                for file in get_all_files(data_model_dir)
             ]
             model_performance = {}
             for model_file in model_files:

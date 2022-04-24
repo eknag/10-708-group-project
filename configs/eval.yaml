@@ -1,6 +1,6 @@
 models: 
   - "CRVAE"
-model_dir: "./aws_data/crvae_cifar10_all_augmentations/"
+model_dir: "./aws_data/crvae_cifar_augmentation_test/"
 output_dir: "./samples"
 dataset_dir: "./data"
 datasets: 
