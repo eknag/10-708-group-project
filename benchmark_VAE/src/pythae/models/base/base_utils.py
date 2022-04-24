@@ -51,6 +51,14 @@ class AugmentationProcessor():
     then you call transform(input) and the function will return the transformed images
     '''
     def __init__(self):
+
+        if not torch.cuda.is_available():
+            #TODO(as) hack so I can move on. On machines without GPUs, "instafilter(Instafilter("Lo-Fi"))"
+            # always causes failure, regardless of what device I sent it to.
+            return
+
+
+
         SimpleAugmentation = transforms.Compose([
             transforms.RandomAffine(degrees=15, translate=(0.05,0.05), scale=(0.9,1.1)),
         ])
