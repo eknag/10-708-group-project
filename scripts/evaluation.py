@@ -58,6 +58,18 @@ def get_eval_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
     elif dataset_name == "CELEBA":
         return datasets.CelebA(root=dataset_dir, train=False, download=True)
 
+def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
+    if dataset_name == "MNIST":
+        return datasets.MNIST(root=dataset_dir, train=True, download=True)
+    elif dataset_name == "FashionMNIST":
+        return datasets.FashionMNIST(
+            root=dataset_dir, train=True, download=True
+        )
+    elif dataset_name == "CIFAR10":
+        return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
+    elif dataset_name == "CELEBA":
+        return datasets.CelebA(root=dataset_dir, train=True, download=True)
+
 
 def get_newest_file(path: str) -> str:
     files = os.listdir(path)
@@ -84,6 +96,7 @@ def evaluate(
     calc_sing: bool,
     lipschitz: bool,
     curve_est: bool,
+    first_deriv: bool,
 ) -> dict[str, float]:
 
     MODEL = get_model(model_name)
@@ -128,18 +141,6 @@ def evaluate(
         return
     if curve_est:
         # Curvature estimation
-        def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
-            if dataset_name == "MNIST":
-                return datasets.MNIST(root=dataset_dir, train=True, download=True)
-            elif dataset_name == "FashionMNIST":
-                return datasets.FashionMNIST(
-                    root=dataset_dir, train=True, download=True
-                )
-            elif dataset_name == "CIFAR10":
-                return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
-            elif dataset_name == "CELEBA":
-                return datasets.CelebA(root=dataset_dir, train=True, download=True)
-
         in_dataset = get_dataset(dataset_name, dataset_dir)
         convert_tensor = transforms.ToTensor()
         dataset = []
@@ -165,6 +166,23 @@ def evaluate(
         )
         print(model_name, " (", dataset_name, ") Encoder: Fischer Inf. Mx: ", K)
         return
+
+    if first_deriv:
+        # Load training dataset
+        in_dataset = get_dataset(dataset_name, dataset_dir)
+
+        # For each sample in the training set
+        convert_tensor = transforms.ToTensor()
+        for d in in_dataset:
+            # Pass sample through the encoder
+            data = convert_tensor(d[0])
+            encoded = model.encoder(data.view(1, *data.shape))
+            print(encoded)
+
+            # TODO Sample from the latent space distribution
+
+            # TODO Back prop the image through the decoder to calculate the gradient at that point
+
 
     SAMPLER = get_sampler(sampler_name)
     sampler = SAMPLER(model=model)
@@ -238,6 +256,7 @@ def main():
     calc_sing = config.calc_singular
     lipschitz = config.lipschitz
     curve_est = config.curve_est
+    first_deriv = config.first_deriv
     performances = {}
     for dataset_name in config.datasets:
         dataset_performance = {}
@@ -266,6 +285,7 @@ def main():
                     calc_sing,
                     lipschitz,
                     curve_est,
+                    first_deriv
                 )
                 model_performance[model_file] = results
             dataset_performance[model_name] = model_performance
