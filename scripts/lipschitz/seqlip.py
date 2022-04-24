@@ -224,10 +224,7 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
 
     sigma = np.ones(n)
 
-    # if use_cuda:
-    #     U.cuda()
-    #     V.cuda()
-
+    print("Performing singular matrix multiplication...")
     try:
         M = torch.mm(U, V)
         # if use_cuda:
@@ -238,6 +235,7 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
         print("V shape: ", V.shape)
 
     #current_spec = torch.linalg.norm(M, ord=2) # sp.linalg.norm(M, 2)
+    print("Calculating SVD...")
     svd = TruncatedSVD(n_components=1, n_iter=10)
     svd.fit(M)
     current_spec = svd.singular_values_[0]
