@@ -15,6 +15,7 @@ import yaml
 import dotsi
 from PIL import Image
 import numpy as np
+import random
 from matplotlib import pyplot as plt
 
 from lipschitz.lipschitz_calc import get_lipschitz, calc_singular_val, model_operations
@@ -173,12 +174,46 @@ def evaluate(
 
         # For each sample in the training set
         convert_tensor = transforms.ToTensor()
-        for d in in_dataset:
-            # Pass sample through the encoder
-            data = convert_tensor(d[0])
-            encoded = model.encoder(data.view(1, *data.shape))
-            print(encoded)
 
+        batch_size = 256
+        sample_number = 100000
+        output_func = lambda x: x
+        model.eval()
+
+        # TODO Verify data shape , supposed to be 10000, 3, 32, 32
+        # TODO Verify value range, supposed to be 0-1.0
+        latent_vectors = []
+        for i in range((in_dataset.shape[0]//batch_size)+1):
+            # Pass sample through the encoder
+            data = convert_tensor(d[i * batch_size : min((i + 1) * batch_size, in_dataset.shape[0])]).cuda()
+            latents = model.encoder(data).detach()
+            latent_vectors.append(latents)
+        latent_vectors = torch.cat(latent_vectors, dim=0)
+        sampled_vectors = []
+        # interpolate data based
+        for _ in range(sample_number):
+            p1 = random.randint(0, in_dataset.shape[0]-1)
+            p2 = p1
+            while p2 == p1:
+                p2 = random.randint(0, in_dataset.shape[0]-1)
+            rand_point = random.random()
+            sampled_vectors.append(rand_point * latent_vectors[p1] + (1-rand_point) * latent_vectors[p2]) # TODO check this interpolation
+        output_vectors = []
+
+        # make sure the gradient can pass through the decoder parameters
+        for param in model.decoder.parameters():
+            param.requires_grad = True
+        grads_all = []
+        for i in range(sample_number//batch_size + 1):
+            # Pass sample through the encoder, and calculate the gradient
+
+            data = torch.stack(output_vectors[ i * batch_size : min((i + 1) * batch_size, sample_number) ])
+            data.requires_grad = True
+            recon = output_func(model.decoder(data))
+            recon.backward()
+            grads_all.append(data.grad.detach().cpu().numpy())
+
+        
             # TODO Sample from the latent space distribution
 
             # TODO Back prop the image through the decoder to calculate the gradient at that point
