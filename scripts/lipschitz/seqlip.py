@@ -281,6 +281,6 @@ def optim_nn_pca_greedy(U, V, max_iteration=10, verbose=True, use_cuda=True):
                 current_spec,
                 previous))
 
-        if it > max_iteration or highest_idx == -1:
+        if it >= max_iteration or highest_idx == -1:
             stop_criterion = True
     return current_spec, sigma
