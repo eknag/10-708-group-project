@@ -17,7 +17,6 @@ from lipschitz.model_get_sv import compute_module_input_sizes, execute_through_m
 
 LIP_OUT_SUBDIR = "lipschitz"
 
-# Set to 200 in the original repo, but they train 500 for some reason
 n_sv = 20
 OPTIM_ITER = 1
 

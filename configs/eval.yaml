@@ -1,8 +1,8 @@
 models: 
   - "CRVAE"
-model_dir: "/Users/andrewstange/Desktop/CMU/Spring_22/10-708/Project/aws_data/crvae_cifar10_all_augmentations"
-output_dir: "/Users/andrewstange/Desktop/CMU/Spring_22/10-708/Project/samples"
-dataset_dir: "/Users/andrewstange/Desktop/CMU/Spring_22/10-708/Project/datasets"
+model_dir: "./aws_data/crvae_cifar_augmentation_test/"
+output_dir: "./samples"
+dataset_dir: "./data"
 datasets: 
   - "CIFAR10"
 sampler: "NormalSampler"
@@ -11,5 +11,5 @@ num_samples: 10000
 batch_size: 100
 num_workers: 4
 calc_singular: False
-lipschitz: True
+lipschitz: False
 curve_est: False
