@@ -202,8 +202,8 @@ def evaluate(
             rand_point = random.random()
             sampled_vectors.append(rand_point * latent_vectors[p1] + (1-rand_point) * latent_vectors[p2]) # TODO check this interpolation
         # make sure the gradient can pass through the decoder parameters
-        for param in model.decoder.parameters():
-            param.requires_grad = True
+   #     for param in model.decoder.parameters():
+   #         param.requires_grad = True
         grads_all = []
         for i in range(sample_number//batch_size):
             # Pass sample through the decoder, and calculate the gradient
