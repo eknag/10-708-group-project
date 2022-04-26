@@ -1,29 +1,37 @@
 from __future__ import annotations
+
+import os
 from argparse import ArgumentParser
+from functools import partial
+
+import dotsi
+import numpy as np
+import torch
+import torchvision
+import yaml
+from matplotlib import pyplot as plt
+from PIL import Image
 from pythae.models import *
 from pythae.models.crvae.crvae_model import CRVAE
 from pythae.samplers import *
-from torchvision import datasets
-from torchvision.datasets.vision import VisionDataset
-import torchvision
 from pytorch_fid.fid_score import calculate_fid_given_paths
-import os
-from tqdm import tqdm
-from functools import partial
-import torch
-import yaml
-import dotsi
-from PIL import Image
-import numpy as np
-from matplotlib import pyplot as plt
-
-from lipschitz.lipschitz_calc import get_lipschitz, calc_singular_val, model_operations
+from pytorch_gan_metrics import (get_fid, get_inception_score,
+                                 get_inception_score_and_fid)
 
 from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+from torchvision.datasets.vision import VisionDataset
+from tqdm import tqdm
+
+from lipschitz.lipschitz_calc import (calc_singular_val, get_lipschitz,
+                                      model_operations)
 from nngeometry.generator import Jacobian
-from nngeometry.object import PMatDiag
 from nngeometry.metrics import FIM
-from torchvision import transforms
+from nngeometry.object import PMatDiag
+from utils import create_sample_mosaic
+from train import download_celeba, generate_temp_datalist
+from pythae.data.datasets import FolderDataset
+
 
 
 ENCODER_NAME = "_encoder"
@@ -50,13 +58,20 @@ def get_sampler(sampler_name: str) -> BaseSampler:
 
 def get_eval_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
     if dataset_name == "MNIST":
-        return datasets.MNIST(root=dataset_dir, train=False, download=True)
+        return datasets.MNIST(root=dataset_dir, train=False, download=True).data
     elif dataset_name == "FashionMNIST":
-        return datasets.FashionMNIST(root=dataset_dir, train=False, download=True)
+        return datasets.FashionMNIST(root=dataset_dir, train=False, download=True).data
     elif dataset_name == "CIFAR10":
-        return datasets.CIFAR10(root=dataset_dir, train=False, download=True)
-    elif dataset_name == "CELEBA":
-        return datasets.CelebA(root=dataset_dir, train=False, download=True)
+        return datasets.CIFAR10(root=dataset_dir, train=False, download=True).data
+    elif dataset_name == "CelebA":
+        train_percentage = 0.8
+        celeba_dir = os.path.join(dataset_dir, "img_align_celeba")
+        if not os.path.exists(celeba_dir) or len(os.listdir(celeba_dir)) < 200000:
+            download_celeba(dataset_dir)
+        all_filenames = generate_temp_datalist(root=dataset_dir)
+        test_filenames = all_filenames[int(train_percentage * len(all_filenames)) :]
+        test_data = FolderDataset("", test_filenames, (64, 64))
+        return test_data
 
 
 def get_newest_file(path: str) -> str:
@@ -187,12 +202,22 @@ def evaluate(
 
     SAMPLER = get_sampler(sampler_name)
     sampler = SAMPLER(model=model)
+    eval_output_dir = os.path.join(output_dir, dataset_name)
+    
+    if not os.path.exists(eval_output_dir):
+        os.makedirs(eval_output_dir)
+
+    create_sample_mosaic(sampler, 4, 4, os.path.join(eval_output_dir, model_file.split("/")[-2] + "_samples"))
 
     # make the output directory
     sample_output_dir = os.path.join(output_dir, model_name, sampler_name, dataset_name)
     os.makedirs(sample_output_dir, exist_ok=True)
 
     samples = sampler.sample(num_samples)
+
+    inception_score, inception_score_std = get_inception_score(
+        samples, use_torch=True)
+
     assert (
         len(samples) == num_samples
     ), f"Expected {num_samples} samples, got {len(samples)}"
@@ -203,20 +228,24 @@ def evaluate(
             sample, os.path.join(sample_output_dir, f"{i}.png")
         )
 
-    dataset = get_eval_dataset(dataset_name, dataset_dir)
+    data = get_eval_dataset(dataset_name, dataset_dir)
     assert (
-        len(dataset) >= num_samples
+        len(data) >= num_samples
     ), f"Dataset {dataset_name} has less than {num_samples} samples"
 
-    data = dataset.data
 
-    eval_output_dir = os.path.join(output_dir, dataset_name)
     os.makedirs(eval_output_dir, exist_ok=True)
     assert os.path.exists(eval_output_dir), f"Could not find {eval_output_dir}"
+
+
 
     for i in range(num_samples):
         image_output_dir = os.path.join(eval_output_dir, f"{i}.png")
         img = data[i]
+        if isinstance(img, dict):
+            img = img["data"]
+        assert img.max() <= 1.0, f"Image {i} has values > 1.0"
+        assert img.min() >= 0.0, f"Image {i} has values < 0.0"
         if isinstance(img, torch.Tensor):
             img = img.cpu().squeeze(0)
             torchvision.utils.save_image(img, image_output_dir)
@@ -228,18 +257,21 @@ def evaluate(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     print(f"batch size {batch_size}")
+
     fid = float(
         calculate_fid_given_paths(
             (eval_output_dir, sample_output_dir),
             batch_size,
             device,
-            dims=2048,
+            dims=2048,  
             num_workers=num_workers,
         )
     )
 
-    results = {"FID": fid}
+    results = {"FID": fid, "Inception Score": inception_score}
     print(f"FID: {fid}")
+    print(f"Inception Score: {inception_score}")
+
     # remove directories and files
     os.system(f"rm -rf {eval_output_dir}")
     os.system(f"rm -rf {sample_output_dir}")
