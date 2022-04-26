@@ -193,7 +193,7 @@ def evaluate(
             latent_vectors.append(latents)
         latent_vectors = torch.cat(latent_vectors, dim=0)
         sampled_vectors = []
-        # interpolate data based
+        # interpolate latent vectors
         for _ in range(sample_number):
             p1 = random.randint(0, len(in_dataset)-1)
             p2 = p1
