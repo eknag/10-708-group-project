@@ -12,7 +12,7 @@ trainer_name: "BaseTrainer"
 training_config:
   output_dir: "./results"
   learning_rate: 0.001
-  batch_size: 128
+  batch_size: 100
   num_epochs: 100
   seed: 42
 
