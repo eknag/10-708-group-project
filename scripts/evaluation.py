@@ -12,6 +12,7 @@ from tqdm import tqdm
 from functools import partial
 import torch
 import yaml
+import json
 import dotsi
 from PIL import Image
 import numpy as np
@@ -111,6 +112,23 @@ def evaluate(
     model.eval()
 
     if calc_sing:
+        # Handle CRVAE augmentations
+        if model_name == "CRVAE":
+            # Load model configuration file
+            with open(model_file + "/model_config.json", "r") as fd:
+                model_config = json.load(fd)
+
+            # Validate augmentation type
+            if model_config['aug_type'] not in ['change_aspect_ratio', 'ins_filter', 'denoise', 'random_noise']:
+                print("Not processing augmentation: ", model_config['aug_type'])
+                return
+
+            # Update output path so that augmentations do not overwrite each other's results
+            model_name = model_name + "_" + model_config['aug_type']
+            output_dir = output_dir + "/" + dataset_name + "_" + model_name
+            os.makedirs(output_dir, exist_ok=True)
+
+            
         # Calculate singular values for encoder and decoder networks
         calc_singular_val(
             model.encoder, output_dir, dataset_name + "_" + model_name + ENCODER_NAME
@@ -122,6 +140,27 @@ def evaluate(
             # Allow singular values and Lipschitz to be calculated together
             return
     if lipschitz:
+        # Handle CRVAE augmentations
+        if model_name == "CRVAE":
+            # Load model configuration file
+            with open(model_file + "/model_config.json", "r") as fd:
+                model_config = json.load(fd)
+
+            # Validate augmentation type
+            if model_config['aug_type'] not in ['change_aspect_ratio', 'ins_filter', 'denoise', 'random_noise']:
+                print("Not processing augmentation: ", model_config['aug_type'])
+                return
+
+            # Update output path so that augmentations do not overwrite each other's results
+            model_name = model_name + "_" + model_config['aug_type']
+            output_dir = output_dir + "/" + dataset_name + "_" + model_name
+
+            # Sanity check
+            if not os.path.exists(output_dir):
+                raise FileNotFoundError(
+                    f"Model directory {output_dir} not found, make sure to train the model first."
+                )
+
         # Calculate Lipschitz constants for encoder and decoder networks.  Note: this reads singular value files
         # from output_dir and stores Lipschitz constants in output_dir/LIP_OUT_SUBDIR (defined in lipschitz_calc.py)
         spectral, lip = get_lipschitz(
