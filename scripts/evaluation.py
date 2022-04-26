@@ -49,27 +49,27 @@ def get_sampler(sampler_name: str) -> BaseSampler:
         return GaussianMixtureSampler
 
 
-def get_eval_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
+def get_eval_dataset(dataset_name: str, dataset_dir, transform=None) -> VisionDataset:
     if dataset_name == "MNIST":
-        return datasets.MNIST(root=dataset_dir, train=False, download=True)
+        return datasets.MNIST(root=dataset_dir, train=False, download=True, transform = transform)
     elif dataset_name == "FashionMNIST":
-        return datasets.FashionMNIST(root=dataset_dir, train=False, download=True)
+        return datasets.FashionMNIST(root=dataset_dir, train=False, download=True, transform = transform)
     elif dataset_name == "CIFAR10":
-        return datasets.CIFAR10(root=dataset_dir, train=False, download=True)
+        return datasets.CIFAR10(root=dataset_dir, train=False, download=True, transform = transform)
     elif dataset_name == "CELEBA":
-        return datasets.CelebA(root=dataset_dir, train=False, download=True)
+        return datasets.CelebA(root=dataset_dir, train=False, download=True, transform = transform)
 
-def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
+def get_dataset(dataset_name: str, dataset_dir, transform=None) -> VisionDataset:
     if dataset_name == "MNIST":
-        return datasets.MNIST(root=dataset_dir, train=True, download=True)
+        return datasets.MNIST(root=dataset_dir, train=True, download=True, transform = transform)
     elif dataset_name == "FashionMNIST":
         return datasets.FashionMNIST(
-            root=dataset_dir, train=True, download=True
+            root=dataset_dir, train=True, download=True, transform = transform
         )
     elif dataset_name == "CIFAR10":
-        return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
+        return datasets.CIFAR10(root=dataset_dir, train=True, download=True, transform = transform)
     elif dataset_name == "CELEBA":
-        return datasets.CelebA(root=dataset_dir, train=True, download=True)
+        return datasets.CelebA(root=dataset_dir, train=True, download=True, transform = transform)
 
 
 def get_newest_file(path: str) -> str:
@@ -98,6 +98,7 @@ def evaluate(
     lipschitz: bool,
     curve_est: bool,
     first_deriv: bool,
+    interpolate_num: int,
 ) -> dict[str, float]:
 
     MODEL = get_model(model_name)
@@ -170,46 +171,45 @@ def evaluate(
 
     if first_deriv:
         # Load training dataset
-        in_dataset = get_dataset(dataset_name, dataset_dir)
-
+        in_dataset = get_dataset(dataset_name, dataset_dir, torchvision.transforms.ToTensor())
+        in_data_loader = DataLoader(in_dataset, batch_size = 256)
         # For each sample in the training set
-        convert_tensor = transforms.ToTensor()
+        #convert_tensor = transforms.ToTensor()
 
-        batch_size = 256
-        sample_number = 100000
-        output_func = lambda x: x
+        sample_number = interpolate_num
+        output_func = lambda x: torch.sum(x)
+        model.cuda()
         model.eval()
 
         # TODO Verify data shape , supposed to be 10000, 3, 32, 32
         # TODO Verify value range, supposed to be 0-1.0
         latent_vectors = []
-        for i in range((in_dataset.shape[0]//batch_size)+1):
+
+        for data, _ in in_data_loader:
             # Pass sample through the encoder
-            data = convert_tensor(d[i * batch_size : min((i + 1) * batch_size, in_dataset.shape[0])]).cuda()
-            latents = model.encoder(data).detach()
+            data = data.cuda()
+            #data = convert_tensor(in_dataset[i * batch_size : min((i + 1) * batch_size, len(in_dataset))]).cuda()
+            latents = model.encoder(data)['embedding'].detach()
             latent_vectors.append(latents)
         latent_vectors = torch.cat(latent_vectors, dim=0)
         sampled_vectors = []
         # interpolate data based
         for _ in range(sample_number):
-            p1 = random.randint(0, in_dataset.shape[0]-1)
+            p1 = random.randint(0, len(in_dataset)-1)
             p2 = p1
             while p2 == p1:
-                p2 = random.randint(0, in_dataset.shape[0]-1)
+                p2 = random.randint(0, len(in_dataset)-1)
             rand_point = random.random()
             sampled_vectors.append(rand_point * latent_vectors[p1] + (1-rand_point) * latent_vectors[p2]) # TODO check this interpolation
-        output_vectors = []
-
         # make sure the gradient can pass through the decoder parameters
         for param in model.decoder.parameters():
             param.requires_grad = True
         grads_all = []
-        for i in range(sample_number//batch_size + 1):
+        for i in range(sample_number//batch_size):
             # Pass sample through the encoder, and calculate the gradient
-
-            data = torch.stack(output_vectors[ i * batch_size : min((i + 1) * batch_size, sample_number) ])
+            data = torch.stack(sampled_vectors[ i * batch_size : min((i + 1) * batch_size, sample_number) ])
             data.requires_grad = True
-            recon = output_func(model.decoder(data))
+            recon = output_func(model.decoder(data)["reconstruction"])
             recon.backward()
             grads_all.append(data.grad.detach().cpu().numpy())
 
@@ -292,6 +292,7 @@ def main():
     lipschitz = config.lipschitz
     curve_est = config.curve_est
     first_deriv = config.first_deriv
+    interpolate_num = config.interpolate_num
     performances = {}
     for dataset_name in config.datasets:
         dataset_performance = {}
@@ -305,6 +306,7 @@ def main():
             model_files = [
                 os.path.join(file, "final_model") for file in get_all_files(model_dir)
             ]
+
             model_performance = {}
             for model_file in model_files:
                 results = evaluate(
@@ -320,7 +322,8 @@ def main():
                     calc_sing,
                     lipschitz,
                     curve_est,
-                    first_deriv
+                    first_deriv,
+                    interpolate_num
                 )
                 model_performance[model_file] = results
             dataset_performance[model_name] = model_performance
