@@ -118,6 +118,10 @@ samples/
 # ray tune hyperparam optimization logging
 ray_results/
 
+<<<<<<< HEAD
 aws_data/
 
 to_aws/
+=======
+aws_data
+>>>>>>> 1b36ebfb6782c6dfe0d8c6465c203cf44250739b

@@ -1,9 +1,6 @@
 models: 
-  - "VAE"
-  - "BetaVAE"
-  - "DVAE"
   - "CRVAE"
-model_dir: "./results"
+model_dir: "./aws_data/crvae_cifar_augmentation_test/"
 output_dir: "./samples"
 dataset_dir: "./data"
 datasets: 
@@ -13,4 +10,6 @@ metric: "FID"
 num_samples: 10000
 batch_size: 100
 num_workers: 4
-
+calc_singular: False
+lipschitz: False
+curve_est: False

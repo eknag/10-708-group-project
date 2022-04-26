@@ -1,7 +1,7 @@
 #!/bin/bash
 
 config_dir=configs
-models=("vae" "betavae" "dvae" "crvae")
+models=("vae" "betavae" "dvae")
 
 for i in ${!models[@]}; do
     echo "Training $models[$i]"
