@@ -18,8 +18,8 @@ from lipschitz.model_get_sv import compute_module_input_sizes, execute_through_m
 LIP_OUT_SUBDIR = "lipschitz"
 
 # Set to 200 in the original repo, but they train 500 for some reason
-n_sv = 200
-OPTIM_ITER = 3
+n_sv = 20
+OPTIM_ITER = 1
 
 
 def calc_singular_val(model, out_dir, model_name):
@@ -36,7 +36,10 @@ def calc_singular_val(model, out_dir, model_name):
         input_size = model.input_dim
     else:
         # decoder input is a vector
-        input_size = (1, 1, 1, model.layers[0].in_features)
+        if model.layers[0]._get_name() == "Sequential":
+            input_size = (1, 1, 1, model.layers[0][0].in_features)
+        else:
+            input_size = (1, 1, 1, model.layers[0].in_features)
     if len(input_size) == 3:
         input_size = [1, *input_size]
     elif len(input_size) != 4:
@@ -54,9 +57,6 @@ def get_lipschitz(model, out_dir, model_name):
     lipschitz_output_dir = os.path.join(out_dir, LIP_OUT_SUBDIR)
     os.makedirs(lipschitz_output_dir, exist_ok=True)
     
-    if "encoder" in model_name:
-        return -1, -1
-        
     # Taken from experiments/model.py
     return model_operations(model, out_dir, lipschitz_output_dir, model_name)
 
