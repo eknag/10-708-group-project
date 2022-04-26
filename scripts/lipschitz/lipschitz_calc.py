@@ -35,7 +35,10 @@ def calc_singular_val(model, out_dir, model_name):
         input_size = model.input_dim
     else:
         # decoder input is a vector
-        input_size = (1, 1, 1, model.layers[0].in_features)
+        if model.layers[0]._get_name() == "Sequential":
+            input_size = (1, 1, 1, model.layers[0][0].in_features)
+        else:
+            input_size = (1, 1, 1, model.layers[0].in_features)
     if len(input_size) == 3:
         input_size = [1, *input_size]
     elif len(input_size) != 4:
