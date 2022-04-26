@@ -206,17 +206,12 @@ def evaluate(
             param.requires_grad = True
         grads_all = []
         for i in range(sample_number//batch_size):
-            # Pass sample through the encoder, and calculate the gradient
+            # Pass sample through the decoder, and calculate the gradient
             data = torch.stack(sampled_vectors[ i * batch_size : min((i + 1) * batch_size, sample_number) ])
             data.requires_grad = True
             recon = output_func(model.decoder(data)["reconstruction"])
             recon.backward()
             grads_all.append(data.grad.detach().cpu().numpy())
-
-        
-            # TODO Sample from the latent space distribution
-
-            # TODO Back prop the image through the decoder to calculate the gradient at that point
 
 
     SAMPLER = get_sampler(sampler_name)
