@@ -1,0 +1,23 @@
+data_dir: "data/"
+
+dataset_name: "CIFAR10"
+
+model_name: "DVAEAug" 
+
+model_config:
+  latent_dim: 16
+  aug_type: "random_noise"
+
+trainer_name: "BaseTrainer"
+training_config:
+  output_dir: "./results"
+  learning_rate: 0.001
+  batch_size: 100
+  num_epochs: 50
+  seed: 42
+
+
+
+
+
+  
