@@ -114,7 +114,6 @@ def evaluate(
     dataset_dir: str,
     calc_sing: bool,
     lipschitz: bool,
-    curve_est: bool,
 ) -> dict[str, float]:
 
     MODEL = get_model(model_name)
@@ -292,7 +291,6 @@ def main():
     dataset_dir = config.dataset_dir
     calc_sing = config.calc_singular
     lipschitz = config.lipschitz
-    curve_est = config.curve_est
     performances = {}
     for dataset_name in config.datasets:
         dataset_performance = {}
@@ -321,7 +319,6 @@ def main():
                     dataset_dir,
                     calc_sing,
                     lipschitz,
-                    curve_est,
                 )
                 model_performance[model_file] = results
             dataset_performance[model_name] = model_performance
