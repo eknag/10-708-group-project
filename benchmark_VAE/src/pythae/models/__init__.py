@@ -21,6 +21,7 @@ from .vae import VAE, VAEConfig
 from .beta_vae import BetaVAE, BetaVAEConfig
 from .crvae import CRVAE, CRVAEConfig
 from .dvae import DVAE, DVAEConfig
+from .dvae_aug import DVAEAug, DVAEAugConfig
 from .factor_vae import FactorVAE, FactorVAEConfig
 from .vamp import VAMP, VAMPConfig
 from .hvae import HVAE, HVAEConfig

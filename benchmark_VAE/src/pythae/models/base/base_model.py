@@ -276,4 +276,4 @@ class BaseAE(nn.Module):
         if aug_type == "ins_filter":
             assert raw_images.size(1) >= 3, "the ins_filter augmentation can only be applied on images with at least 3 channels"
         transform = self.augmentation_processor.get_augmentation(aug_type)
-        return transform(raw_images)
+        return transform(raw_images) 

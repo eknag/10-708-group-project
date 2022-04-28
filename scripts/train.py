@@ -145,6 +145,10 @@ def get_model(
         model_config = models.DVAEConfig(input_dim=input_dim, **config["model_config"],)
         model = models.DVAE(model_config, encoder, decoder)
 
+    elif model_name == "DVAEAug":
+        model_config = models.DVAEAugConfig(input_dim=input_dim, **config["model_config"],)
+        model = models.DVAEAug(model_config, encoder, decoder)
+
     elif model_name == "CRVAE":
         model_config = models.CRVAEConfig(
             input_dim=input_dim, **config["model_config"],
