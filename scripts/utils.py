@@ -1,4 +1,4 @@
-
+import os
 
 def create_sample_mosaic(sampler, n_rows, n_cols, fname):
     """
@@ -26,5 +26,8 @@ def create_sample_mosaic(sampler, n_rows, n_cols, fname):
             ax = plt.subplot(gs[i, j])
             ax.imshow(sampler.sample(1)[0].cpu().numpy().transpose(1, 2, 0))
             ax.axis('off')
-
+    print(f"saving figure to {fname + '.png'}")
+    path = fname.split('/')[:-1].join('/')
+    if not os.path.exists(path):
+        os.makedirs(path)
     plt.savefig(fname + '.png')

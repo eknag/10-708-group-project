@@ -204,10 +204,16 @@ def evaluate(
     sampler = SAMPLER(model=model)
     eval_output_dir = os.path.join(output_dir, dataset_name)
     
+
+    image_output_dir = os.path.join("./sample_images", dataset_name)
     if not os.path.exists(eval_output_dir):
         os.makedirs(eval_output_dir)
+    if not os.path.exists(image_output_dir):
+        os.makedirs(image_output_dir)
 
-    create_sample_mosaic(sampler, 4, 4, os.path.join(eval_output_dir, model_file.split("/")[-2] + "_samples"))
+    fname = os.path.join(image_output_dir,  model_file.split("/")[-2] + "_samples")
+
+    create_sample_mosaic(sampler, 6, 6, fname)
 
     # make the output directory
     sample_output_dir = os.path.join(output_dir, model_name, sampler_name, dataset_name)
@@ -244,7 +250,9 @@ def evaluate(
         img = data[i]
         if isinstance(img, dict):
             img = img["data"]
-        assert img.max() <= 1.0, f"Image {i} has values > 1.0"
+        if not img.max() <= 1.0:
+            img = transforms.ToTensor()(img)
+            assert img.max() <= 1.0
         assert img.min() >= 0.0, f"Image {i} has values < 0.0"
         if isinstance(img, torch.Tensor):
             img = img.cpu().squeeze(0)
