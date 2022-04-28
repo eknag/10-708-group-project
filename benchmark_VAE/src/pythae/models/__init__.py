@@ -84,4 +84,6 @@ __all__ = [
     "FactorVAEConfig",
     "BetaTCVAE",
     "BetaTCVAEConfig",
+    "DVAEAug", 
+    "DVAEAugConfig"
 ]
