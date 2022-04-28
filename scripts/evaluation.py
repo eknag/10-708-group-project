@@ -42,6 +42,8 @@ def get_model(model_name: str) -> VAE:
         return BetaVAE
     elif model_name == "DVAE":
         return DVAE
+    elif model_name == "DVAEAug":
+        return DVAEAug
     elif model_name == "CRVAE":
         return CRVAE
 
