@@ -1,14 +1,10 @@
 models: 
-  - "VAE"
-  - "BetaVAE"
-  - "DVAE"
-  - "CRVAE"
+  - "DVAEAug"
 model_dir: "./aws_data/trained_models/"
 output_dir: "./samples"
 dataset_dir: "./data"
 datasets: 
   - "CIFAR10"
-  - "CelebA"
 sampler: "NormalSampler"
 metric: "FID"
 num_samples: 10000

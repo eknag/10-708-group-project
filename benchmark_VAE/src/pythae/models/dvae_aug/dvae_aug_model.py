@@ -45,7 +45,7 @@ class DVAEAug(VAE):
 
         VAE.__init__(self, model_config=model_config, encoder=encoder, decoder=decoder)
 
-        self.model_name = "DVAE"
+        self.model_name = "DVAEAug"
         #self.sigma = model_config.sigma
         self.aug_type = model_config.aug_type
 
@@ -126,7 +126,7 @@ class DVAEAug(VAE):
             )
 
         path_to_model_config = os.path.join(dir_path, "model_config.json")
-        model_config = DVAEConfig.from_json_file(path_to_model_config)
+        model_config = DVAEAugConfig.from_json_file(path_to_model_config)
 
         return model_config
 
