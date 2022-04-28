@@ -27,7 +27,7 @@ def create_sample_mosaic(sampler, n_rows, n_cols, fname):
             ax.imshow(sampler.sample(1)[0].cpu().numpy().transpose(1, 2, 0))
             ax.axis('off')
     print(f"saving figure to {fname + '.png'}")
-    path = fname.split('/')[:-1].join('/')
+    path = '/'.join(fname.split('/')[:-1])
     if not os.path.exists(path):
         os.makedirs(path)
     plt.savefig(fname + '.png')
