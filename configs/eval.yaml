@@ -16,4 +16,3 @@ batch_size: 100
 num_workers: 4
 calc_singular: False
 lipschitz: False
-curve_est: False

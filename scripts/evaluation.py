@@ -25,9 +25,6 @@ from tqdm import tqdm
 
 from lipschitz.lipschitz_calc import (calc_singular_val, get_lipschitz,
                                       model_operations)
-from nngeometry.generator import Jacobian
-from nngeometry.metrics import FIM
-from nngeometry.object import PMatDiag
 from utils import create_sample_mosaic
 from train import download_celeba, generate_temp_datalist
 from pythae.data.datasets import FolderDataset
@@ -197,45 +194,6 @@ def evaluate(
             spectral,
             ")",
         )
-        return
-    if curve_est:
-        # Curvature estimation
-        def get_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
-            if dataset_name == "MNIST":
-                return datasets.MNIST(root=dataset_dir, train=True, download=True)
-            elif dataset_name == "FashionMNIST":
-                return datasets.FashionMNIST(
-                    root=dataset_dir, train=True, download=True
-                )
-            elif dataset_name == "CIFAR10":
-                return datasets.CIFAR10(root=dataset_dir, train=True, download=True)
-            elif dataset_name == "CELEBA":
-                return datasets.CelebA(root=dataset_dir, train=True, download=True)
-
-        in_dataset = get_dataset(dataset_name, dataset_dir)
-        convert_tensor = transforms.ToTensor()
-        dataset = []
-        for d in in_dataset:
-            data = convert_tensor(d[0])
-            dataset.append((data.view(1, *data.shape), d[1]))
-
-        loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
-
-        def encoder_function(*dataset):
-            # Run all samples in dataset through the model and return a Tensor of their embeddings
-            out = []
-            for i in range(len(dataset[0])):
-                out.append(model.encoder(dataset[0][i])["embedding"])
-            return torch.stack(out, dim=0)
-
-        K = FIM(
-            model=model.encoder,
-            loader=loader,
-            representation=PMatDiag,
-            n_output=16,
-            function=encoder_function,
-        )
-        print(model_name, " (", dataset_name, ") Encoder: Fischer Inf. Mx: ", K)
         return
 
     SAMPLER = get_sampler(sampler_name)
