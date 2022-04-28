@@ -11,7 +11,7 @@ datasets:
   - "CelebA"
 sampler: "NormalSampler"
 metric: "FID"
-num_samples: 3000
+num_samples: 10000
 batch_size: 100
 num_workers: 4
 calc_singular: False
