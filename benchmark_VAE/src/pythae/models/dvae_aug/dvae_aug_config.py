@@ -1,0 +1,21 @@
+from pydantic.dataclasses import dataclass
+
+from .. import VAEConfig
+
+
+@dataclass
+class DVAEAugConfig(VAEConfig):
+    r"""
+    :math:DVAE model config config class
+
+    Parameters:
+        input_dim (int): The input_data dimension
+        latent_dim (int): The latent space dimension. Default: None.
+        reconstruction_loss (str): The reconstruction loss to use ['bce', 'mse']. Default: 'mse'
+        sigma (float): The curruption factor, ie the standard deviation of the Gaussian noise. Default: 0.025
+    """
+
+    #sigma: float = 0.025
+
+    # Type of augmentation to apply
+    aug_type: str = "denoise"

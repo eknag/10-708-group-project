@@ -52,10 +52,10 @@ class AugmentationProcessor():
     '''
     def __init__(self):
 
-        if not torch.cuda.is_available():
-            #TODO(as) hack so I can move on. On machines without GPUs, "instafilter(Instafilter("Lo-Fi"))"
-            # always causes failure, regardless of what device I sent it to.
-            return
+        # if not torch.cuda.is_available():
+        #     #TODO(as) hack so I can move on. On machines without GPUs, "instafilter(Instafilter("Lo-Fi"))"
+        #     # always causes failure, regardless of what device I sent it to.
+        #     return
 
 
 
