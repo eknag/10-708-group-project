@@ -19,3 +19,4 @@ class DVAEAugConfig(VAEConfig):
 
     # Type of augmentation to apply
     aug_type: str = "denoise"
+    beta: float = 1.0

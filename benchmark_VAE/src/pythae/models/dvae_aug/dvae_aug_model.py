@@ -48,6 +48,7 @@ class DVAEAug(VAE):
         self.model_name = "DVAEAug"
         #self.sigma = model_config.sigma
         self.aug_type = model_config.aug_type
+        self.beta = model_config.beta
 
     def forward(self, inputs: BaseDataset, **kwargs):
         """
@@ -106,7 +107,7 @@ class DVAEAug(VAE):
                 reduction="none",
             ).sum(dim=-1)
 
-        KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=-1)
+        KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=-1) * self.beta
         return (recon_loss + KLD).mean(dim=0), recon_loss.mean(dim=0), KLD.mean(dim=0)
 
     def _sample_gauss(self, mu, std):

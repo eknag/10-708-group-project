@@ -1,6 +1,10 @@
 models: 
+  # - "VAE"
+  # - "BetaVAE"
+  # - "DVAE"
   - "DVAEAug"
-model_dir: "./aws_data/trained_models/"
+  # - "CRVAE"
+model_dir: "./results/"
 output_dir: "./samples"
 dataset_dir: "./data"
 datasets: 

@@ -7,6 +7,7 @@ model_name: "DVAEAug"
 model_config:
   latent_dim: 16
   aug_type: "random_noise"
+  beta: 0.1
 
 trainer_name: "BaseTrainer"
 training_config:
@@ -15,7 +16,7 @@ training_config:
   batch_size: 100
   num_epochs: 50
   seed: 42
-
+  steps_saving: 10
 
 
 
