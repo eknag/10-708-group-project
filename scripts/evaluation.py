@@ -46,6 +46,8 @@ def get_model(model_name: str) -> VAE:
         return DVAEAug
     elif model_name == "CRVAE":
         return CRVAE
+    elif model_name == "PVAE":
+        return PVAE
 
 def reconstruct_images(model, dataset, device, fname, n_samples=5, n_recons=4):
     """
