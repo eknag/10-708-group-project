@@ -47,7 +47,7 @@ def get_model(model_name: str) -> VAE:
     elif model_name == "CRVAE":
         return CRVAE
 
-def reconstruct_images(model, dataset, device, fname, n_samples=10):
+def reconstruct_images(model, dataset, device, fname, n_samples=5, n_recons=4):
     """
     This code is not pretty, but it runs
     """
@@ -70,21 +70,26 @@ def reconstruct_images(model, dataset, device, fname, n_samples=10):
             assert images.min() >= 0.0
 
             input = {"data": images}
-            for _ in range(9):
+            for _ in range(n_recons):
                 recons = model(input)
                 reconstructed_images.append((recons["recon_x"].cpu().numpy() * 255).astype(np.uint8))
             break
     
 
     # plot reconstructed images next to original images
-    fig, ax = plt.subplots(n_samples, 10, figsize=(10, 10))
+    fig, ax = plt.subplots(n_samples, n_recons+1, figsize=(10, 10))
     if original_images.shape[-1] not in [1, 3]:
         original_images = original_images.transpose(0, 2, 3, 1)
     for i in range(n_samples):
         ax[i][0].imshow(original_images[i, :, : , :].squeeze())
-        for j in range(9):
+        for j in range(n_recons):
             ax[i][1+j].imshow(reconstructed_images[j][i, :, :, :].squeeze().transpose(1, 2, 0))
     fname = fname + "_reconstructed.png"
+    # remove axis labels
+    for i in range(n_samples):
+        for j in range(n_recons + 1):
+            ax[i][j].axis("off")
+
     plt.savefig(fname)
             
 
