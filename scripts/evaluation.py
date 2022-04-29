@@ -28,7 +28,7 @@ from lipschitz.lipschitz_calc import (calc_singular_val, get_lipschitz,
 from utils import create_sample_mosaic
 from train import download_celeba, generate_temp_datalist
 from pythae.data.datasets import FolderDataset
-
+from torch.utils.data import DataLoader
 
 
 ENCODER_NAME = "_encoder"
@@ -46,6 +46,47 @@ def get_model(model_name: str) -> VAE:
         return DVAEAug
     elif model_name == "CRVAE":
         return CRVAE
+
+def reconstruct_images(model, dataset, device, fname, n_samples=10):
+    """
+    This code is not pretty, but it runs
+    """
+    model.eval()
+    reconstructed_images = []
+    original_images = []
+    total_samples = 0
+    data_loader = DataLoader(dataset, batch_size=n_samples, shuffle=False)
+    with torch.no_grad():
+        for iter, images in enumerate(tqdm(data_loader)):
+            if isinstance(images, dict):
+                images = images["data"]
+            original_images = np.copy(images.numpy())
+            images = images.float().to(device)
+            if images.size(-1) in [1, 3]:
+                images = images.permute(0, 3, 1, 2)
+            if images.max() > 1:
+                images /= 255
+            assert images.max() <= 1.0
+            assert images.min() >= 0.0
+
+            input = {"data": images}
+            for _ in range(9):
+                recons = model(input)
+                reconstructed_images.append((recons["recon_x"].cpu().numpy() * 255).astype(np.uint8))
+            break
+    
+
+    # plot reconstructed images next to original images
+    fig, ax = plt.subplots(n_samples, 10, figsize=(10, 10))
+    if original_images.shape[-1] not in [1, 3]:
+        original_images = original_images.transpose(0, 2, 3, 1)
+    for i in range(n_samples):
+        ax[i][0].imshow(original_images[i, :, : , :].squeeze())
+        for j in range(9):
+            ax[i][1+j].imshow(reconstructed_images[j][i, :, :, :].squeeze().transpose(1, 2, 0))
+    fname = fname + "_reconstructed.png"
+    plt.savefig(fname)
+            
 
 
 def get_sampler(sampler_name: str) -> BaseSampler:
@@ -71,6 +112,23 @@ def get_eval_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
         test_filenames = all_filenames[int(train_percentage * len(all_filenames)) :]
         test_data = FolderDataset("", test_filenames, (64, 64))
         return test_data
+
+def get_train_dataset(dataset_name: str, dataset_dir) -> VisionDataset:
+    if dataset_name == "MNIST":
+        return datasets.MNIST(root=dataset_dir, train=True, download=True).data
+    elif dataset_name == "FashionMNIST":
+        return datasets.FashionMNIST(root=dataset_dir, train=True, download=True).data
+    elif dataset_name == "CIFAR10":
+        return datasets.CIFAR10(root=dataset_dir, train=True, download=True).data
+    elif dataset_name == "CelebA":
+        train_percentage = 0.8
+        celeba_dir = os.path.join(dataset_dir, "img_align_celeba")
+        if not os.path.exists(celeba_dir) or len(os.listdir(celeba_dir)) < 200000:
+            download_celeba(dataset_dir)
+        all_filenames = generate_temp_datalist(root=dataset_dir)
+        train_filenames = all_filenames[:int(train_percentage * len(all_filenames))]
+        train_data = FolderDataset("", train_filenames, (64, 64))
+        return train_data
 
 
 def get_newest_file(path: str) -> str:
@@ -211,6 +269,10 @@ def evaluate(
     fname = os.path.join(image_output_dir,  model_file.split("/")[-2] + "_samples")
 
     create_sample_mosaic(sampler, 6, 6, fname)
+
+    train_data = get_train_dataset(dataset_name, dataset_dir)
+
+    reconstruct_images(model, train_data, "cuda", fname)
 
     # make the output directory
     sample_output_dir = os.path.join(output_dir, model_name, sampler_name, dataset_name)
