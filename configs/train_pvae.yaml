@@ -1,0 +1,25 @@
+data_dir: "data/"
+
+dataset_name: "CIFAR10"
+
+model_name: "PVAE" 
+
+model_config:
+  latent_dim: 16
+  beta : 2
+  radius : 1
+
+trainer_name: "BaseTrainer"
+training_config:
+  output_dir: "./results"
+  learning_rate: 0.001
+  batch_size: 100
+  num_epochs: 50
+  seed: 42
+  steps_saving: 5
+
+
+
+
+
+  

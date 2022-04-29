@@ -25,6 +25,7 @@ from .dvae_aug import DVAEAug, DVAEAugConfig
 from .factor_vae import FactorVAE, FactorVAEConfig
 from .vamp import VAMP, VAMPConfig
 from .hvae import HVAE, HVAEConfig
+from .pvae import PVAE, PVAEConfig
 from .rhvae import RHVAE, RHVAEConfig
 from .rae_l2 import RAE_L2, RAE_L2_Config
 from .rae_gp import RAE_GP, RAE_GP_Config
@@ -54,6 +55,8 @@ __all__ = [
     "CRVAEConfig",
     "DVAE",
     "DVAEConfig",
+    "PVAE",
+    "PVAEConfig",
     "VAMP",
     "VAMPConfig",
     "HVAE",

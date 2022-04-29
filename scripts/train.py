@@ -155,7 +155,11 @@ def get_model(
         )
 
         model = models.CRVAE(model_config, encoder, decoder)
-
+    elif model_name == "PVAE":
+        model_config = models.PVAEConfig(
+                input_dim=input_dim, **config["model_config"],
+        )
+        model = models.PVAE(model_config, encoder, decoder)
     return model
 
 
