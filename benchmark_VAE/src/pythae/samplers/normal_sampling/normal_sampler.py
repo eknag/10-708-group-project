@@ -48,6 +48,7 @@ class NormalSampler(BaseSampler):
 
         for i in range(full_batch_nbr):
             z = torch.randn(batch_size, self.model.latent_dim).to(self.device)
+            # z = z / torch.norm(z, dim=1, keepdim=True) 
             x_gen = self.model.decoder(z)["reconstruction"].detach()
 
             if output_dir is not None:

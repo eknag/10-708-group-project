@@ -124,7 +124,7 @@ class PVAE(VAE):
             )
 
         path_to_model_config = os.path.join(dir_path, "model_config.json")
-        model_config = BetaVAEConfig.from_json_file(path_to_model_config)
+        model_config = PVAEConfig.from_json_file(path_to_model_config)
 
         return model_config
 
