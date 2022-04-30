@@ -136,23 +136,18 @@ class CRVAE(BaseAE):
             recon_loss = F.mse_loss(
                 recon.reshape(batch_size, -1),
                 original.reshape(batch_size, -1),
-                reduction="mean",
-            )
+                reduction="none",
+            ).sum(dim=-1)
         elif self.model_config.reconstruction_loss == "bce":
             recon_loss = F.binary_cross_entropy(
                 recon.reshape(batch_size, -1),
                 original.reshape(batch_size, -1),
-                reduction="mean",
-            )
+                reduction="none",
+            ).sum(dim=-1)
 
-        # see Appendix B from VAE paper:
-        # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
-        # https://arxiv.org/abs/1312.6114
-        # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=-1)
 
-        vae_loss = recon_loss + beta * KLD
-        return vae_loss, recon_loss, KLD
+        return (recon_loss + beta * KLD).mean(dim=0), recon_loss.mean(dim=0), KLD.mean(dim=0)
 
     def _cr_loss(self, mu, logvar, mu_aug, logvar_aug, gamma):
         """
