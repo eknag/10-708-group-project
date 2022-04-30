@@ -13,3 +13,9 @@ When training or evaluating models, you need to make sure you have awscli instal
 To download trained models, run `bash download.sh` 
 
 To upload trained models, run `bash upload.sh`
+
+# Training
+Run `python3 scripts/train.py --config configs/<training config file>` in order to train a model.
+
+Run `python3 scripts/evaluation.py -c configs/eval.yaml` to perform evaluations.
+
