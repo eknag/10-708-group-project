@@ -15,7 +15,7 @@ To download trained models, run `bash download.sh`
 To upload trained models, run `bash upload.sh`
 
 # Usage
-Run `python3 scripts/train.py --config configs/<training config file>` in order to train a model.
+Run `python3 scripts/train.py --config configs/<training config file>` in order to train a model.  Datasets specified in the configuration file will be downloaded automatically to the specified dataset location when the script is run.
 
 Run `python3 scripts/evaluation.py -c configs/eval.yaml` to perform evaluations.
 
